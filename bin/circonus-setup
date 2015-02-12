@@ -9,7 +9,8 @@ var argv = minimist(process.argv.slice(2), {
     alias: {
         "help": "h",
         "target": "t",
-        "authtoken": ["k", "auth-token", "auth_token"]
+        "authtoken": ["k", "auth-token", "auth_token"],
+        "brokerid": ["b", "broker-id", "broker_id"]
     }
 });
 
@@ -21,7 +22,8 @@ if(argv.help) {
 // Get general system info
 prompts = [
     { varname: "target", text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host." },
-    { varname: "authtoken", text: "Please enter your Circonus auth token." }
+    { varname: "authtoken", text: "Please enter your Circonus auth token." },
+    { varname: "brokerid", text: "Please enter a broker ID to use." }
 ]
 
 getSystemInfo(argv, prompts, function(argv) {
@@ -35,6 +37,7 @@ function help(err) {
     console.log("\t%s\t this help message", "-h, --help");
     console.log("\t%s\t an IP or hostname for this server accessible by the Circonus broker", "-t, --target");
     console.log("\t%s\t your Circonus auth token", "-k, --authtoken");
+    console.log("\t%s\t broker ID to use", "-b, --brokerid");
     console.log();
 }
 
