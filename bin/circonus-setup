@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // -*- mode: javascript -*-
 
+var async = require('async');
 var fs = require('fs');
+var path = require('path');
 var readline = require('readline');
 var minimist = require('minimist');
 
@@ -19,16 +21,39 @@ if(argv.help) {
     process.exit(-1);
 }
 
-// Get general system info
-prompts = [
+var configData = {};
+var components = [];
+var tasks = [];
+
+var prompts = [
     { varname: "target", text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host." },
     { varname: "authtoken", text: "Please enter your Circonus auth token." },
     { varname: "brokerid", text: "Please enter a broker ID to use." }
 ]
 
-getSystemInfo(argv, prompts, function(argv) {
-    console.dir(argv);
+// Collect general system info from user
+tasks.push(function(callback) {
+    getSystemInfo(argv, prompts, callback);
 });
+
+// Load and initialize components
+tasks.push(function(callback) {
+    getAvailableComponents(argv, components, function(err) {
+        if(err) {
+            console.log("Error finding components: %s", err);
+            process.exit(1);
+        }
+        else {
+            callback();
+        }
+    });
+});
+
+async.parallel(tasks, function(err) {
+
+});
+
+/* ----- */
 
 function help(err) {
     console.log("usage: %s [options]", process.argv[1]);
@@ -40,7 +65,6 @@ function help(err) {
     console.log("\t%s\t broker ID to use", "-b, --brokerid");
     console.log();
 }
-
 
 function getSystemInfo(info, prompts, callback) {
     if(prompts.length > 0) {
@@ -71,4 +95,53 @@ function getSystemInfo(info, prompts, callback) {
     else {
         return callback(info);
     }
+}
+
+function getAvailableComponents(info, components, callback) {
+    var componentsDir = path.resolve(__dirname, '..', 'components');
+
+    fs.readdir(componentsDir, function(err, files) {
+        if(err) {
+            return callback(err);
+        }
+
+        files.forEach(function(filename) {
+            fullPath = path.resolve(componentsDir, filename);
+
+            if(path.extname(fullPath) == '.js') {
+                component = {
+                    name: path.basename(fullPath).replace('.js', ''),
+                    module: require(fullPath)
+                };
+
+                components.push(component);
+            }
+        });
+
+        return initializeComponents(info, components, callback);
+    });
+}
+
+function initializeComponents(info, components, callback) {
+    tasks = []
+
+    components.forEach(function(component) {
+        if(component.module.initialize) {
+            tasks.push(function(callback) {
+                component.module.initialize(info, function(err) {
+                    if(err) {
+                        console.log("Error initializing component <%s>: %s", component.name, err);
+                        process.exit(1);
+                    }
+                    else {
+                        callback();
+                    }
+                });
+            });
+        }
+    });
+
+    async.parallel(tasks, function(err) {
+        return err;
+    });
 }
