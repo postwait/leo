@@ -1,15 +1,10 @@
-function initialize(info, callback) {
+exports.initialize = function(info, callback) {
     callback(null);
-}
-
-function main() {
-}
-
-function cleanup() {
-}
-
-module.exports = {
-    initialize: initialize,
-    main: main,
-    cleanup: cleanup
 };
+
+exports.main = function() {
+};
+
+exports.cleanup = function() {
+};
+
