@@ -1,0 +1,71 @@
+#!/usr/bin/env node
+// -*- mode: javascript -*-
+
+var fs = require('fs');
+var readline = require('readline');
+var minimist = require('minimist');
+
+var argv = minimist(process.argv.slice(2), {
+    alias: {
+        "help": "h",
+        "target": "t",
+        "authtoken": ["k", "auth-token", "auth_token"]
+    }
+});
+
+if(argv.help) {
+    help();
+    process.exit(-1);
+}
+
+// Get general system info
+prompts = [
+    { varname: "target", text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host." },
+    { varname: "authtoken", text: "Please enter your Circonus auth token." }
+]
+
+getSystemInfo(argv, prompts, function(argv) {
+    console.dir(argv);
+});
+
+function help(err) {
+    console.log("usage: %s [options]", process.argv[1]);
+    console.log();
+    console.log("optional arguments:");
+    console.log("\t%s\t this help message", "-h, --help");
+    console.log("\t%s\t an IP or hostname for this server accessible by the Circonus broker", "-t, --target");
+    console.log("\t%s\t your Circonus auth token", "-k, --authtoken");
+    console.log();
+}
+
+
+function getSystemInfo(info, prompts, callback) {
+    if(prompts.length > 0) {
+        prompt = prompts.shift();
+
+        if(info[prompt.varname]) {
+            return getSystemInfo(info, prompts, callback);
+        }
+
+        console.log(prompt.text);
+
+        var rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout
+        });
+
+        var promptText = "> ";
+        if(prompt.defaultValue) {
+            promptText = util.format("[%s] > ", prompt.defaultValue);
+        }
+
+        rl.question(promptText, function(answer) {
+            info[prompt.varname] = answer || prompt.defaultValue;
+            rl.close();
+            return getSystemInfo(info, prompts, callback);
+        });
+    }
+    else {
+        return callback(info);
+    }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "cup",
+  "version": "0.0.1",
+  "author": "OmniTI Computer Consulting, Inc. <hello@omniti.com>",
+  "main": "./bin/circonus-setup",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/circonus-labs/cup"
+  },
+  "dependencies": {
+    "minimist": ">=1.1.0"
+  }
+}
