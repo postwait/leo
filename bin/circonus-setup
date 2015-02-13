@@ -21,39 +21,87 @@ if(argv.help) {
     process.exit(-1);
 }
 
-var configData = {};
+var configData = {
+    graphs: {}
+};
+
 var components = [];
-var tasks = [];
 
-var prompts = [
-    { varname: "target", text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host." },
-    { varname: "authtoken", text: "Please enter your Circonus auth token." },
-    { varname: "brokerid", text: "Please enter a broker ID to use." }
-]
-
-// Collect general system info from user
-tasks.push(function(callback) {
-    getSystemInfo(argv, prompts, callback);
+async.series([
+    initialize,
+    main,
+    cleanup
+], function(err) {
+    if(err) {
+        process.exit(-1);
+    }
 });
 
-// Load and initialize components
-tasks.push(function(callback) {
-    getAvailableComponents(argv, components, function(err) {
-        if(err) {
-            console.log("Error finding components: %s", err);
-            process.exit(1);
-        }
-        else {
-            callback();
-        }
+/* -------------------------------------------------------------------------- */
+
+function initialize(callback) {
+    var tasks = [];
+
+    // Collect general system info from user
+    var prompts = [
+        { varname: "target", text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host." },
+        { varname: "authtoken", text: "Please enter your Circonus auth token." },
+        { varname: "brokerid", text: "Please enter a broker ID to use." }
+    ]
+
+    tasks.push(function(callback) {
+        getSystemInfo(argv, prompts, function(err) {
+            if(err) {
+                console.log("Error collecting system configuration info:");
+                console.log(err);
+            }
+
+            return callback(err);
+        });
     });
-});
 
-async.parallel(tasks, function(err) {
+    // Load and initialize components
+    tasks.push(function(callback) {
+        getAvailableComponents(argv, components, function(err) {
+            if(err) {
+                console.log("Error finding components:");
+                console.log(err);
+            }
 
-});
+            return callback(err);
+        });
+    });
 
-/* ----- */
+    async.parallel(tasks, function(err) {
+        return callback(err);
+    });
+}
+
+function main(callback) {
+    // Run main for each component
+    tasks.push(function(callback) {
+        runComponents(argv, components, configData, function(err) {
+            if(err) {
+                console.log("Error running components:");
+                console.log(err);
+            }
+
+            return callback(err);
+        });
+    });
+
+    async.parallel(tasks, function(err) {
+        return callback(err);
+    });
+}
+
+function cleanup(callback) {
+    console.log("in cleanup");
+    console.dir(configData);
+    return callback(null);
+}
+
+/* -------------------------------------------------------------------------- */
 
 function help(err) {
     console.log("usage: %s [options]", process.argv[1]);
@@ -67,38 +115,42 @@ function help(err) {
 }
 
 function getSystemInfo(info, prompts, callback) {
-    if(prompts.length > 0) {
-        prompt = prompts.shift();
+    tasks = []
+    prompts.forEach(function(prompt) {
+        tasks.push(function(callback) {
+            if(info[prompt.varname]) {
+                return callback();
+            }
 
-        if(info[prompt.varname]) {
-            return getSystemInfo(info, prompts, callback);
-        }
+            console.log(prompt.text);
 
-        console.log(prompt.text);
+            var rl = readline.createInterface({
+                input: process.stdin,
+                output: process.stdout
+            });
 
-        var rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout
+            var promptText = "> ";
+            if(prompt.defaultValue) {
+                promptText = util.format("[%s] > ", prompt.defaultValue);
+            }
+
+            rl.question(promptText, function(answer) {
+                info[prompt.varname] = answer || prompt.defaultValue;
+                rl.close();
+
+                return callback();
+            });
         });
+    });
 
-        var promptText = "> ";
-        if(prompt.defaultValue) {
-            promptText = util.format("[%s] > ", prompt.defaultValue);
-        }
-
-        rl.question(promptText, function(answer) {
-            info[prompt.varname] = answer || prompt.defaultValue;
-            rl.close();
-            return getSystemInfo(info, prompts, callback);
-        });
-    }
-    else {
-        return callback(info);
-    }
+    async.series(tasks, function(err) {
+        return callback(err);
+    });
 }
 
 function getAvailableComponents(info, components, callback) {
     var componentsDir = path.resolve(__dirname, '..', 'components');
+    tasks = [];
 
     fs.readdir(componentsDir, function(err, files) {
         if(err) {
@@ -115,33 +167,51 @@ function getAvailableComponents(info, components, callback) {
                 };
 
                 components.push(component);
+
+                if(!component.module.initialize) {
+                    return;
+                }
+
+                tasks.push(function(callback) {
+                    component.module.initialize(info, function(err) {
+                        if(err) {
+                            console.log("Error initializing component <%s>: %s", component.name, err);
+                        }
+
+                        return callback(err);
+                    });
+                });
             }
         });
 
-        return initializeComponents(info, components, callback);
+        async.parallel(tasks, function(err) {
+            return callback(err);
+        });
     });
 }
 
-function initializeComponents(info, components, callback) {
-    tasks = []
+function runComponents(info, components, configData, callback) {
+    tasks = [];
 
     components.forEach(function(component) {
-        if(component.module.initialize) {
-            tasks.push(function(callback) {
-                component.module.initialize(info, function(err) {
-                    if(err) {
-                        console.log("Error initializing component <%s>: %s", component.name, err);
-                        process.exit(1);
-                    }
-                    else {
-                        callback();
-                    }
-                });
-            });
+        if(!component.module.main) {
+            return;
         }
+
+        console.log("running <%s>", component.name);
+
+        tasks.push(function(callback) {
+            component.module.main(info, configData, function(err) {
+                if(err) {
+                    console.log("Error running component <%s>: %s", component.name, err);
+                }
+
+                return callback(err);
+            });
+        });
     });
 
     async.parallel(tasks, function(err) {
-        return err;
+        return callback(err);
     });
 }

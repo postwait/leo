@@ -2,7 +2,44 @@ exports.initialize = function(info, callback) {
     callback(null);
 };
 
-exports.main = function() {
+exports.prompts = function() {
+};
+
+exports.main = function(info, configData, callback) {
+    configData.graphs["CPU"] = {
+        "style": "line",
+        "datapoints": [
+            {
+                "name": "CPU Kernel",
+                "metric_name": "aggcpu`cpu_stat:all:sys:cpu_kernel",
+                "metric_type": "numeric",
+                "axis": "l",
+                "stack": 0,
+                "derive": "counter",
+                "hidden": false
+            },
+            {
+                "name": "CPU User",
+                "metric_name": "aggcpu`cpu_stat:all:sys:cpu_user",
+                "metric_type": "numeric",
+                "axis": "l",
+                "stack": 0,
+                "derive": "counter",
+                "hidden": false
+            },
+            {
+                "name": "CPU Idle",
+                "metric_name": "aggcpu`cpu_stat:all:sys:cpu_idle",
+                "metric_type": "numeric",
+                "axis": "l",
+                "stack": 0,
+                "derive": "counter",
+                "hidden": false
+            }
+        ]
+    };
+
+    callback(null);
 };
 
 exports.cleanup = function() {
