@@ -24,7 +24,19 @@ if(userConfig.help) {
 }
 
 var configData = {
-    graphs: {}
+    graphs: {},
+    check: {
+        type: "json",
+        period: 60,
+        timeout: 10,
+        metrics: {
+            numeric: [],
+            text: []
+        },
+        config: {
+            port: 2609
+        }
+    }
 };
 
 var components = [];

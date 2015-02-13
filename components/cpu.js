@@ -40,6 +40,14 @@ exports.main = function(userConfig, configData, callback) {
         ]
     };
 
+    configData.metrics.numeric.push(
+        "aggcpu`cpu_stat:all:sys:cpu_idle",
+        "aggcpu`cpu_stat:all:sys:cpu_user",
+        "aggcpu`cpu_stat:all:sys:cpu_kernel",
+        "aggcpu`cpu_stat:all:sys:sysfork",
+        "aggcpu`cpu_stat:all:sys:syscall"
+    );
+
     callback(null);
 };
 
