@@ -47,14 +47,8 @@ function initialize(callback) {
     var tasks = [];
 
     // Collect general system info from user
-    var prompts = [
-        { varname: "target", text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host." },
-        { varname: "authtoken", text: "Please enter your Circonus auth token." },
-        { varname: "brokerid", text: "Please enter a broker ID to use." }
-    ]
-
     tasks.push(function(callback) {
-        getSystemInfo(userConfig, prompts, function(err) {
+        getSystemInfo(userConfig, function(err) {
             if(err) {
                 console.log("Error collecting system configuration info:");
                 console.log(err);
@@ -159,37 +153,91 @@ function help(err) {
     console.log();
 }
 
-function getSystemInfo(userConfig, prompts, callback) {
-    tasks = []
-    prompts.forEach(function(prompt) {
-        tasks.push(function(callback) {
-            if(userConfig[prompt.varname]) {
-                return callback();
+function getSystemInfo(userConfig, callback) {
+    var tasks = [];
+
+    tasks.push(function(callback) {
+        promptUser({
+            varname: "target",
+            text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host."
+        }, userConfig, function(err) {
+            return callback(err);
+        });
+    });
+
+    tasks.push(function(callback) {
+        promptUser({
+            varname: "authtoken",
+            text: "Please enter your Circonus auth token."
+        }, userConfig, function(err) {
+            userConfig.api = require('circonusapi2');
+            userConfig.api.setup(userConfig.authtoken, "nad");
+            return callback(err);
+        });
+    });
+
+    tasks.push(function(callback) {
+        userConfig.api.get("/broker", null, function(code, err, body) {
+            if(err) {
+                console.log("Couldn't get list of available brokers: %s", err);
+                return callback(err);
             }
+            userConfig.availableBrokers = body;
 
-            console.log(prompt.text);
+            console.log("Select a broker to use:");
+            userConfig.availableBrokers.forEach(function(broker) {
+                var match = broker._cid.match( /\/broker\/(\d+)$/ );
+                if(!match) {
+                    return callback(util.format("Couldn't parse broker ID '%s'.", broker._cid));
+                }
 
-            var rl = readline.createInterface({
-                input: process.stdin,
-                output: process.stdout
+                broker.id = match[1];
             });
 
-            var promptText = "> ";
-            if(prompt.defaultValue) {
-                promptText = util.format("[%s] > ", prompt.defaultValue);
-            }
+            userConfig.availableBrokers.sort(function(a, b) {
+                return a.id - b.id;
+            });
 
-            rl.question(promptText, function(answer) {
-                userConfig[prompt.varname] = answer || prompt.defaultValue;
-                rl.close();
+            userConfig.availableBrokers.forEach(function(broker) {
+                console.log("  %d. %s", broker.id, broker._name);
+            });
 
-                return callback();
+            promptUser({
+                varname: "brokerid",
+                text: ""
+            }, userConfig, function(err) {
+                return callback(err);
             });
         });
     });
 
     async.series(tasks, function(err) {
         return callback(err);
+    });
+}
+
+function promptUser(prompt, userConfig, callback) {
+    if(userConfig[prompt.varname]) {
+        return callback();
+    }
+
+    console.log(prompt.text);
+
+    var rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    var promptText = "> ";
+    if(prompt.defaultValue) {
+        promptText = util.format("[%s] > ", prompt.defaultValue);
+    }
+
+    rl.question(promptText, function(answer) {
+        userConfig[prompt.varname] = answer || prompt.defaultValue;
+        rl.close();
+
+        return callback();
     });
 }
 
