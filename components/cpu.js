@@ -2,10 +2,11 @@ exports.initialize = function(info, callback) {
     callback(null);
 };
 
-exports.prompts = function() {
+exports.prompts = function(userConfig, configData, callback) {
+    callback(null);
 };
 
-exports.main = function(info, configData, callback) {
+exports.main = function(userConfig, configData, callback) {
     configData.graphs["CPU"] = {
         "style": "line",
         "datapoints": [
@@ -42,6 +43,6 @@ exports.main = function(info, configData, callback) {
     callback(null);
 };
 
-exports.cleanup = function() {
+exports.cleanup = function(userConfig, configData, callback) {
 };
 

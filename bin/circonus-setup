@@ -8,7 +8,7 @@ var readline = require('readline');
 var minimist = require('minimist');
 var jsonfile = require('jsonfile');
 
-var argv = minimist(process.argv.slice(2), {
+var userConfig = minimist(process.argv.slice(2), {
     alias: {
         "help": "h",
         "target": "t",
@@ -18,7 +18,7 @@ var argv = minimist(process.argv.slice(2), {
     }
 });
 
-if(argv.help) {
+if(userConfig.help) {
     help();
     process.exit(-1);
 }
@@ -31,6 +31,7 @@ var components = [];
 
 async.series([
     initialize,
+    componentPrompts,
     main,
     finish
 ], function(err) {
@@ -41,6 +42,7 @@ async.series([
 
 /* -------------------------------------------------------------------------- */
 
+// Initialize: gather basic system information
 function initialize(callback) {
     var tasks = [];
 
@@ -52,7 +54,7 @@ function initialize(callback) {
     ]
 
     tasks.push(function(callback) {
-        getSystemInfo(argv, prompts, function(err) {
+        getSystemInfo(userConfig, prompts, function(err) {
             if(err) {
                 console.log("Error collecting system configuration info:");
                 console.log(err);
@@ -64,7 +66,7 @@ function initialize(callback) {
 
     // Load and initialize components
     tasks.push(function(callback) {
-        getAvailableComponents(argv, components, function(err) {
+        getAvailableComponents(userConfig, components, function(err) {
             if(err) {
                 console.log("Error finding components:");
                 console.log(err);
@@ -79,13 +81,13 @@ function initialize(callback) {
     });
 }
 
-function main(callback) {
-    // Run main for each component
+// Component prompts: for any components that need to prompt the user for more information
+function componentPrompts(callback) {
+    // Run prompts for each component
     tasks.push(function(callback) {
-        runComponents(argv, components, configData, function(err) {
+        runForEachComponent("prompts", components, userConfig, configData, function(err) {
             if(err) {
-                console.log("Error running components:");
-                console.log(err);
+                console.log("Error running components: %s", err);
             }
 
             return callback(err);
@@ -97,10 +99,26 @@ function main(callback) {
     });
 }
 
+// Main: create data structure
+function main(callback) {
+    // Run main for each component
+    tasks.push(function(callback) {
+        runForEachComponent("main", components, userConfig, configData, function(err) {
+
+            return callback(err);
+        });
+    });
+
+    async.parallel(tasks, function(err) {
+        return callback(err);
+    });
+}
+
+// Finish: write config file, run nad
 function finish(callback) {
     // Run cleanup for each component
     tasks.push(function(callback) {
-        cleanupComponents(argv, components, configData, function(err) {
+        runForEachComponent("cleanup", components, userConfig, configData, function(err) {
             if(err) {
                 console.log("Error in component cleanup:");
                 console.log(err);
@@ -112,7 +130,7 @@ function finish(callback) {
 
     // Write config file
     tasks.push(function(callback) {
-        writeConfigFile(argv, configData, function(err) {
+        writeConfigFile(userConfig, configData, function(err) {
             if(err) {
                 console.log("Error writing config file:");
                 console.log(err);
@@ -141,11 +159,11 @@ function help(err) {
     console.log();
 }
 
-function getSystemInfo(info, prompts, callback) {
+function getSystemInfo(userConfig, prompts, callback) {
     tasks = []
     prompts.forEach(function(prompt) {
         tasks.push(function(callback) {
-            if(info[prompt.varname]) {
+            if(userConfig[prompt.varname]) {
                 return callback();
             }
 
@@ -162,7 +180,7 @@ function getSystemInfo(info, prompts, callback) {
             }
 
             rl.question(promptText, function(answer) {
-                info[prompt.varname] = answer || prompt.defaultValue;
+                userConfig[prompt.varname] = answer || prompt.defaultValue;
                 rl.close();
 
                 return callback();
@@ -175,7 +193,7 @@ function getSystemInfo(info, prompts, callback) {
     });
 }
 
-function getAvailableComponents(info, components, callback) {
+function getAvailableComponents(userConfig, components, callback) {
     var componentsDir = path.resolve(__dirname, '..', 'components');
     tasks = [];
 
@@ -200,7 +218,7 @@ function getAvailableComponents(info, components, callback) {
                 }
 
                 tasks.push(function(callback) {
-                    component.module.initialize(info, function(err) {
+                    component.module.initialize(userConfig, function(err) {
                         if(err) {
                             console.log("Error initializing component <%s>: %s", component.name, err);
                         }
@@ -217,7 +235,7 @@ function getAvailableComponents(info, components, callback) {
     });
 }
 
-function runComponents(info, components, configData, callback) {
+function runForEachComponent(functionName, components, userConfig, configData, callback) {
     tasks = [];
 
     components.forEach(function(component) {
@@ -225,12 +243,12 @@ function runComponents(info, components, configData, callback) {
             return;
         }
 
-        console.log("running <%s>", component.name);
+        console.log("running <%s.%s>", component.name, functionName);
 
         tasks.push(function(callback) {
-            component.module.main(info, configData, function(err) {
+            component.module[functionName](userConfig, configData, function(err) {
                 if(err) {
-                    console.log("Error running component <%s>: %s", component.name, err);
+                    console.log("Error running <%s.%s>: %s", component.name, functionName, err);
                 }
 
                 return callback(err);
@@ -243,34 +261,8 @@ function runComponents(info, components, configData, callback) {
     });
 }
 
-function cleanupComponents(info, components, configData, callback) {
-    tasks = [];
-
-    components.forEach(function(component) {
-        if(!component.module.cleanup) {
-            return;
-        }
-
-        console.log("running cleanup for <%s>", component.name);
-
-        tasks.push(function(callback) {
-            component.module.cleanup(info, configData, function(err) {
-                if(err) {
-                    console.log("Error running cleanup for component <%s>: %s", component.name, err);
-                }
-
-                return callback(err);
-            });
-        });
-    });
-
-    async.parallel(tasks, function(err) {
-        return callback(err);
-    });
-}
-
-function writeConfigFile(argv, configData, callback) {
-    jsonfile.writeFile(argv.output, configData, function(err) {
+function writeConfigFile(userConfig, configData, callback) {
+    jsonfile.writeFile(userConfig.output, configData, function(err) {
         return callback(err);
     });
 }
