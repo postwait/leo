@@ -40,7 +40,7 @@ exports.main = function(userConfig, configData, callback) {
         ]
     };
 
-    configData.metrics.numeric.push(
+    configData.check.metrics.numeric.push(
         "aggcpu`cpu_stat:all:sys:cpu_idle",
         "aggcpu`cpu_stat:all:sys:cpu_user",
         "aggcpu`cpu_stat:all:sys:cpu_kernel",
