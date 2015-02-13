@@ -98,6 +98,18 @@ function main(callback) {
 }
 
 function finish(callback) {
+    // Run cleanup for each component
+    tasks.push(function(callback) {
+        cleanupComponents(argv, components, configData, function(err) {
+            if(err) {
+                console.log("Error in component cleanup:");
+                console.log(err);
+            }
+
+            return callback(err);
+        });
+    });
+
     // Write config file
     tasks.push(function(callback) {
         writeConfigFile(argv, configData, function(err) {
@@ -219,6 +231,32 @@ function runComponents(info, components, configData, callback) {
             component.module.main(info, configData, function(err) {
                 if(err) {
                     console.log("Error running component <%s>: %s", component.name, err);
+                }
+
+                return callback(err);
+            });
+        });
+    });
+
+    async.parallel(tasks, function(err) {
+        return callback(err);
+    });
+}
+
+function cleanupComponents(info, components, configData, callback) {
+    tasks = [];
+
+    components.forEach(function(component) {
+        if(!component.module.cleanup) {
+            return;
+        }
+
+        console.log("running cleanup for <%s>", component.name);
+
+        tasks.push(function(callback) {
+            component.module.cleanup(info, configData, function(err) {
+                if(err) {
+                    console.log("Error running cleanup for component <%s>: %s", component.name, err);
                 }
 
                 return callback(err);
