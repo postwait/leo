@@ -6,13 +6,15 @@ var fs = require('fs');
 var path = require('path');
 var readline = require('readline');
 var minimist = require('minimist');
+var jsonfile = require('jsonfile');
 
 var argv = minimist(process.argv.slice(2), {
     alias: {
         "help": "h",
         "target": "t",
         "authtoken": ["k", "auth-token", "auth_token"],
-        "brokerid": ["b", "broker-id", "broker_id"]
+        "brokerid": ["b", "broker-id", "broker_id"],
+        "output": "o"
     }
 });
 
@@ -30,7 +32,7 @@ var components = [];
 async.series([
     initialize,
     main,
-    cleanup
+    finish
 ], function(err) {
     if(err) {
         process.exit(-1);
@@ -95,10 +97,22 @@ function main(callback) {
     });
 }
 
-function cleanup(callback) {
-    console.log("in cleanup");
-    console.dir(configData);
-    return callback(null);
+function finish(callback) {
+    // Write config file
+    tasks.push(function(callback) {
+        writeConfigFile(argv, configData, function(err) {
+            if(err) {
+                console.log("Error writing config file:");
+                console.log(err);
+            }
+
+            return callback(err);
+        });
+    });
+
+    async.parallel(tasks, function(err) {
+        return callback(err);
+    });
 }
 
 /* -------------------------------------------------------------------------- */
@@ -111,6 +125,7 @@ function help(err) {
     console.log("\t%s\t an IP or hostname for this server accessible by the Circonus broker", "-t, --target");
     console.log("\t%s\t your Circonus auth token", "-k, --authtoken");
     console.log("\t%s\t broker ID to use", "-b, --brokerid");
+    console.log("\t%s\t location to write config file to", "-o, --output");
     console.log();
 }
 
@@ -212,6 +227,12 @@ function runComponents(info, components, configData, callback) {
     });
 
     async.parallel(tasks, function(err) {
+        return callback(err);
+    });
+}
+
+function writeConfigFile(argv, configData, callback) {
+    jsonfile.writeFile(argv.output, configData, function(err) {
         return callback(err);
     });
 }
