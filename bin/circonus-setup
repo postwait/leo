@@ -317,18 +317,16 @@ function getAvailableComponents(callback) {
                 }
 
                 tasks.push(function(callback) {
-                    component.initialize(function(err) {
-                        if(err) {
-                            console.error("Error initializing component <%s>: %s", component.name, err);
-                        }
-
-                        return callback(err);
-                    });
                 });
             }
         });
 
-        async.parallel(tasks, function(err) {
+        runForEachComponent("initialize", function(err) {
+            if(err) {
+                console.error("Error initializing components:");
+                console.error(err);
+            }
+
             return callback(err);
         });
     });
