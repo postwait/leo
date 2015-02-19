@@ -116,8 +116,9 @@ function componentPrompts(callback) {
     var tasks = [];
 
     // Run prompts for each component
+    // These have to run in series since each one has to prompt the user
     tasks.push(function(callback) {
-        runForEachComponent("prompts", function(err) {
+        runForEachComponent("prompts", {"series": true}, function(err) {
             if(err) {
                 console.error("Error running components: %s", err);
             }
@@ -137,7 +138,7 @@ function main(callback) {
 
     // Run main for each component
     tasks.push(function(callback) {
-        runForEachComponent("main", function(err) {
+        runForEachComponent("main", {}, function(err) {
             return callback(err);
         });
     });
@@ -153,7 +154,7 @@ function finish(callback) {
 
     // Run cleanup for each component
     tasks.push(function(callback) {
-        runForEachComponent("cleanup", function(err) {
+        runForEachComponent("cleanup", {}, function(err) {
             if(err) {
                 console.error("Error in component cleanup:");
                 console.error(err);
@@ -321,7 +322,7 @@ function getAvailableComponents(callback) {
             }
         });
 
-        runForEachComponent("initialize", function(err) {
+        runForEachComponent("initialize", {}, function(err) {
             if(err) {
                 console.error("Error initializing components:");
                 console.error(err);
@@ -332,7 +333,7 @@ function getAvailableComponents(callback) {
     });
 }
 
-function runForEachComponent(functionName, callback) {
+function runForEachComponent(functionName, opts, callback) {
     var tasks = [];
 
     includedComponents.forEach(function(component) {
@@ -351,9 +352,15 @@ function runForEachComponent(functionName, callback) {
         });
     });
 
-    async.parallel(tasks, function(err) {
-        return callback(err);
-    });
+    if(opts.series) {
+        async.series(tasks, function(err) {
+            return callback(err);
+        });
+    } else {
+        async.parallel(tasks, function(err) {
+            return callback(err);
+        });
+    }
 }
 
 function writeConfigFile(callback) {
