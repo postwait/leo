@@ -301,14 +301,16 @@ function getAvailableComponents(callback) {
 
             if(path.extname(fullPath) == '.js') {
                 component = new Component(fullPath);
+                component.userConfig = userConfig;
+                component.configData = configData;
                 includedComponents.push(component);
 
-                if(!component.module.initialize) {
+                if(!component.initialize) {
                     return;
                 }
 
                 tasks.push(function(callback) {
-                    component.module.initialize(userConfig, component.config, function(err) {
+                    component.initialize(function(err) {
                         if(err) {
                             console.error("Error initializing component <%s>: %s", component.name, err);
                         }
@@ -329,12 +331,12 @@ function runForEachComponent(functionName, callback) {
     var tasks = [];
 
     includedComponents.forEach(function(component) {
-        if(!component.module[functionName]) {
+        if(!component[functionName]) {
             return;
         }
 
         tasks.push(function(callback) {
-            component.module[functionName](userConfig, component.config, configData, function(err) {
+            component[functionName](function(err) {
                 if(err) {
                     console.error("Error running <%s.%s>: %s", component.name, functionName, err);
                 }
