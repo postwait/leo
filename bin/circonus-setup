@@ -3,10 +3,11 @@
 
 var async = require('async');
 var fs = require('fs');
+var jsonfile = require('jsonfile');
+var minimist = require('minimist');
 var path = require('path');
 var readline = require('readline');
-var minimist = require('minimist');
-var jsonfile = require('jsonfile');
+var url = require('url');
 var util = require('util');
 
 libDir = path.resolve(__dirname, "..", "lib");
@@ -31,19 +32,8 @@ if(userConfig.help) {
 }
 
 var configData = {
-    graphs: {},
-    check: {
-        type: "json",
-        period: 60,
-        timeout: 10,
-        metrics: {
-            numeric: [],
-            text: []
-        },
-        config: {
-            port: 2609
-        }
-    }
+    graphs: [],
+    metrics: []
 };
 
 var includedComponents = [];
@@ -166,6 +156,18 @@ function finish(callback) {
         runForEachComponent("cleanup", function(err) {
             if(err) {
                 console.error("Error in component cleanup:");
+                console.error(err);
+            }
+
+            return callback(err);
+        });
+    });
+
+    // Add checks via API
+    tasks.push(function(callback) {
+        addChecks(function(err) {
+            if(err) {
+                console.error("Error adding checks via API:");
                 console.error(err);
             }
 
@@ -362,3 +364,22 @@ function writeConfigFile(callback) {
     });
 }
 
+function addChecks(callback) {
+    checkBundleData = {
+        "brokers": [ "/broker/" + userConfig.brokerid ],
+        "config": {
+            "url": url.format({"protocol": "http", "hostname": userConfig.target}),
+            "port": 2609
+        },
+        "metrics": configData.metrics,
+        "period": 60,
+        "status": "active",
+        "target": userConfig.target,
+        "timeout": 10,
+        "type": "json"
+    };
+
+    userConfig.api.post("/check_bundle", checkBundleData, function(code, err, body) {
+        return callback(err);
+    });
+}
