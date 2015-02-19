@@ -3,8 +3,7 @@ var path = require('path');
 module.exports = function CPU() {
     this.initialize = function(callback) {
         var scriptPath = path.join(this.userConfig.nadpath, "etc", "node-agent.d", "cpu.sh");
-        this.addMetricsFromScriptOutput(scriptPath, callback);
-
+        this.getMetricsFromScriptOutput(scriptPath, callback);
     };
 
     this.main = function(callback) {
