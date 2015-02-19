@@ -328,7 +328,7 @@ function runForEachComponent(functionName, callback) {
     tasks = [];
 
     includedComponents.forEach(function(component) {
-        if(!component.module.main) {
+        if(!component.module[functionName]) {
             return;
         }
 
