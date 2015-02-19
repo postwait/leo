@@ -252,7 +252,7 @@ function getSystemInfo(callback) {
 
             var promptText = "Select a broker to use:\n";
             userConfig.availableBrokers.forEach(function(broker) {
-                promptText += util.format("  %d. %s", broker.id, broker._name);
+                promptText += util.format("  %d. %s\n", broker.id, broker._name);
             });
 
             promptUser({
