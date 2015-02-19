@@ -95,8 +95,8 @@ function initialize(callback) {
     tasks.push(function(callback) {
         getSystemInfo(function(err) {
             if(err) {
-                console.log("Error collecting system configuration info:");
-                console.log(err);
+                console.error("Error collecting system configuration info:");
+                console.error(err);
             }
 
             return callback(err);
@@ -107,8 +107,8 @@ function initialize(callback) {
     tasks.push(function(callback) {
         getAvailableComponents(function(err) {
             if(err) {
-                console.log("Error finding components:");
-                console.log(err);
+                console.error("Error finding components:");
+                console.error(err);
             }
 
             return callback(err);
@@ -128,7 +128,7 @@ function componentPrompts(callback) {
     tasks.push(function(callback) {
         runForEachComponent("prompts", function(err) {
             if(err) {
-                console.log("Error running components: %s", err);
+                console.error("Error running components: %s", err);
             }
 
             return callback(err);
@@ -160,8 +160,8 @@ function finish(callback) {
     tasks.push(function(callback) {
         runForEachComponent("cleanup", function(err) {
             if(err) {
-                console.log("Error in component cleanup:");
-                console.log(err);
+                console.error("Error in component cleanup:");
+                console.error(err);
             }
 
             return callback(err);
@@ -172,8 +172,8 @@ function finish(callback) {
     tasks.push(function(callback) {
         writeConfigFile(function(err) {
             if(err) {
-                console.log("Error writing config file:");
-                console.log(err);
+                console.error("Error writing config file:");
+                console.error(err);
             }
 
             return callback(err);
@@ -188,15 +188,15 @@ function finish(callback) {
 /* -------------------------------------------------------------------------- */
 
 function help(err) {
-    console.log("usage: %s [options]", process.argv[1]);
-    console.log();
-    console.log("optional arguments:");
-    console.log("\t%s\t this help message", "-h, --help");
-    console.log("\t%s\t an IP or hostname for this server accessible by the Circonus broker", "-t, --target");
-    console.log("\t%s\t your Circonus auth token", "-k, --authtoken");
-    console.log("\t%s\t broker ID to use", "-b, --brokerid");
-    console.log("\t%s\t location to write config file to", "-o, --output");
-    console.log();
+    console.info("usage: %s [options]", process.argv[1]);
+    console.info();
+    console.info("optional arguments:");
+    console.info("\t%s\t this help message", "-h, --help");
+    console.info("\t%s\t an IP or hostname for this server accessible by the Circonus broker", "-t, --target");
+    console.info("\t%s\t your Circonus auth token", "-k, --authtoken");
+    console.info("\t%s\t broker ID to use", "-b, --brokerid");
+    console.info("\t%s\t location to write config file to", "-o, --output");
+    console.info();
 }
 
 function getSystemInfo(callback) {
@@ -225,12 +225,12 @@ function getSystemInfo(callback) {
     tasks.push(function(callback) {
         userConfig.api.get("/broker", null, function(code, err, body) {
             if(err) {
-                console.log("Couldn't get list of available brokers: %s", err);
+                console.error("Couldn't get list of available brokers: %s", err);
                 return callback(err);
             }
             userConfig.availableBrokers = body;
 
-            console.log("Select a broker to use:");
+            console.info("Select a broker to use:");
             userConfig.availableBrokers.forEach(function(broker) {
                 var match = broker._cid.match( /\/broker\/(\d+)$/ );
                 if(!match) {
@@ -245,7 +245,7 @@ function getSystemInfo(callback) {
             });
 
             userConfig.availableBrokers.forEach(function(broker) {
-                console.log("  %d. %s", broker.id, broker._name);
+                console.info("  %d. %s", broker.id, broker._name);
             });
 
             promptUser({
@@ -267,7 +267,7 @@ function promptUser(prompt, callback) {
         return callback();
     }
 
-    console.log(prompt.text);
+    console.info(prompt.text);
 
     var rl = readline.createInterface({
         input: process.stdin,
@@ -310,7 +310,7 @@ function getAvailableComponents(callback) {
                 tasks.push(function(callback) {
                     component.module.initialize(userConfig, component.config, function(err) {
                         if(err) {
-                            console.log("Error initializing component <%s>: %s", component.name, err);
+                            console.error("Error initializing component <%s>: %s", component.name, err);
                         }
 
                         return callback(err);
@@ -320,26 +320,23 @@ function getAvailableComponents(callback) {
         });
 
         async.parallel(tasks, function(err) {
-            console.log(includedComponents);
             return callback(err);
         });
     });
 }
 
 function runForEachComponent(functionName, callback) {
-    tasks = [];
+    var tasks = [];
 
     includedComponents.forEach(function(component) {
         if(!component.module[functionName]) {
             return;
         }
 
-        console.log("running <%s.%s>", component.name, functionName);
-
         tasks.push(function(callback) {
             component.module[functionName](userConfig, component.config, configData, function(err) {
                 if(err) {
-                    console.log("Error running <%s.%s>: %s", component.name, functionName, err);
+                    console.error("Error running <%s.%s>: %s", component.name, functionName, err);
                 }
 
                 return callback(err);
