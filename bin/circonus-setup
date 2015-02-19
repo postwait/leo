@@ -45,6 +45,7 @@ var configData = {
 var components = [];
 
 async.series([
+    getNadPath,
     initialize,
     componentPrompts,
     main,
@@ -56,6 +57,30 @@ async.series([
 });
 
 /* -------------------------------------------------------------------------- */
+
+// Components need the correct path to nad before they can initialize
+function getNadPath(callback) {
+    if(!userConfig.nadpath) {
+        userConfig.nadpath = "/opt/circonus";
+    }
+
+    if(!fs.existsSync(userConfig.nadpath) || !fs.existsSync(path.join(userConfig.nadpath, "sbin", "nad"))) {
+        promptUser({
+            varname: "nadpath",
+            text: util.format("Node.js Agent not found at %s.\n" +
+                              "If nad is not installed, please visit %s and download the correct package for your platform.\n" +
+                              "If nad is installed in another location, enter that location.",
+                              userConfig.nadpath, nadURL)
+        }, userConfig, function(err) {
+            if(!fs.existsSync(userConfig.nadpath) || !fs.existsSync(path.join(userConfig.nadpath, "sbin", "nad"))) {
+                return callback(util.format("nad not found at %s. Please visit %s and download the correct package for your platform.",
+                                            userConfig.nadpath, nadURL));
+            }
+
+            return callback(err);
+        });
+    }
+}
 
 // Initialize: gather basic system information
 function initialize(callback) {
@@ -170,28 +195,6 @@ function help(err) {
 
 function getSystemInfo(userConfig, callback) {
     var tasks = [];
-
-    if(!userConfig.nadpath)
-        userConfig.nadpath = "/opt/circonus";
-
-    if(!fs.existsSync(userConfig.nadpath) || !fs.existsSync(path.join(userConfig.nadpath, "sbin", "nad"))) {
-        tasks.push(function(callback) {
-            promptUser({
-                varname: "nadpath",
-                text: util.format("Node.js Agent not found at %s.\n" +
-                                  "If nad is not installed, please visit %s and download the correct package for your platform.\n" +
-                                  "If nad is installed in another location, enter that location.",
-                                  userConfig.nadpath, nadURL)
-            }, userConfig, function(err) {
-                if(!fs.existsSync(userConfig.nadpath) || !fs.existsSync(path.join(userConfig.nadpath, "sbin", "nad"))) {
-                    return callback(util.format("nad not found at %s. Please visit %s and download the correct package for your platform.",
-                                                userConfig.nadpath, nadURL));
-                }
-
-                return callback(err);
-            });
-        });
-    }
 
     tasks.push(function(callback) {
         promptUser({
