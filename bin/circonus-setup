@@ -42,7 +42,7 @@ var configData = {
     }
 };
 
-var components = [];
+var includedComponents = [];
 
 async.series([
     getNadPath,
@@ -71,7 +71,7 @@ function getNadPath(callback) {
                               "If nad is not installed, please visit %s and download the correct package for your platform.\n" +
                               "If nad is installed in another location, enter that location.",
                               userConfig.nadpath, nadURL)
-        }, userConfig, function(err) {
+        }, function(err) {
             if(!fs.existsSync(userConfig.nadpath) || !fs.existsSync(path.join(userConfig.nadpath, "sbin", "nad"))) {
                 return callback(util.format("nad not found at %s. Please visit %s and download the correct package for your platform.",
                                             userConfig.nadpath, nadURL));
@@ -80,6 +80,8 @@ function getNadPath(callback) {
             return callback(err);
         });
     }
+
+    callback(null);
 }
 
 // Initialize: gather basic system information
@@ -88,7 +90,7 @@ function initialize(callback) {
 
     // Collect general system info from user
     tasks.push(function(callback) {
-        getSystemInfo(userConfig, function(err) {
+        getSystemInfo(function(err) {
             if(err) {
                 console.log("Error collecting system configuration info:");
                 console.log(err);
@@ -100,7 +102,7 @@ function initialize(callback) {
 
     // Load and initialize components
     tasks.push(function(callback) {
-        getAvailableComponents(userConfig, components, function(err) {
+        getAvailableComponents(function(err) {
             if(err) {
                 console.log("Error finding components:");
                 console.log(err);
@@ -119,7 +121,7 @@ function initialize(callback) {
 function componentPrompts(callback) {
     // Run prompts for each component
     tasks.push(function(callback) {
-        runForEachComponent("prompts", components, userConfig, configData, function(err) {
+        runForEachComponent("prompts", function(err) {
             if(err) {
                 console.log("Error running components: %s", err);
             }
@@ -137,8 +139,7 @@ function componentPrompts(callback) {
 function main(callback) {
     // Run main for each component
     tasks.push(function(callback) {
-        runForEachComponent("main", components, userConfig, configData, function(err) {
-
+        runForEachComponent("main", function(err) {
             return callback(err);
         });
     });
@@ -152,7 +153,7 @@ function main(callback) {
 function finish(callback) {
     // Run cleanup for each component
     tasks.push(function(callback) {
-        runForEachComponent("cleanup", components, userConfig, configData, function(err) {
+        runForEachComponent("cleanup", function(err) {
             if(err) {
                 console.log("Error in component cleanup:");
                 console.log(err);
@@ -164,7 +165,7 @@ function finish(callback) {
 
     // Write config file
     tasks.push(function(callback) {
-        writeConfigFile(userConfig, configData, function(err) {
+        writeConfigFile(function(err) {
             if(err) {
                 console.log("Error writing config file:");
                 console.log(err);
@@ -193,14 +194,14 @@ function help(err) {
     console.log();
 }
 
-function getSystemInfo(userConfig, callback) {
+function getSystemInfo(callback) {
     var tasks = [];
 
     tasks.push(function(callback) {
         promptUser({
             varname: "target",
             text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host."
-        }, userConfig, function(err) {
+        }, function(err) {
             return callback(err);
         });
     });
@@ -209,7 +210,7 @@ function getSystemInfo(userConfig, callback) {
         promptUser({
             varname: "authtoken",
             text: "Please enter your Circonus auth token."
-        }, userConfig, function(err) {
+        }, function(err) {
             userConfig.api = require('circonusapi2');
             userConfig.api.setup(userConfig.authtoken, "nad");
             return callback(err);
@@ -245,7 +246,7 @@ function getSystemInfo(userConfig, callback) {
             promptUser({
                 varname: "brokerid",
                 text: ""
-            }, userConfig, function(err) {
+            }, function(err) {
                 return callback(err);
             });
         });
@@ -256,7 +257,7 @@ function getSystemInfo(userConfig, callback) {
     });
 }
 
-function promptUser(prompt, userConfig, callback) {
+function promptUser(prompt, callback) {
     if(userConfig[prompt.varname]) {
         return callback();
     }
@@ -281,7 +282,7 @@ function promptUser(prompt, userConfig, callback) {
     });
 }
 
-function getAvailableComponents(userConfig, components, callback) {
+function getAvailableComponents(callback) {
     var componentsDir = path.resolve(__dirname, '..', 'components');
     tasks = [];
 
@@ -296,17 +297,18 @@ function getAvailableComponents(userConfig, components, callback) {
             if(path.extname(fullPath) == '.js') {
                 component = {
                     name: path.basename(fullPath).replace('.js', ''),
-                    module: require(fullPath)
+                    module: require(fullPath),
+                    config: {}
                 };
 
-                components.push(component);
+                includedComponents.push(component);
 
                 if(!component.module.initialize) {
                     return;
                 }
 
                 tasks.push(function(callback) {
-                    component.module.initialize(userConfig, function(err) {
+                    component.module.initialize(userConfig, component.config, function(err) {
                         if(err) {
                             console.log("Error initializing component <%s>: %s", component.name, err);
                         }
@@ -318,15 +320,16 @@ function getAvailableComponents(userConfig, components, callback) {
         });
 
         async.parallel(tasks, function(err) {
+            console.log(includedComponents);
             return callback(err);
         });
     });
 }
 
-function runForEachComponent(functionName, components, userConfig, configData, callback) {
+function runForEachComponent(functionName, callback) {
     tasks = [];
 
-    components.forEach(function(component) {
+    includedComponents.forEach(function(component) {
         if(!component.module.main) {
             return;
         }
@@ -334,7 +337,7 @@ function runForEachComponent(functionName, components, userConfig, configData, c
         console.log("running <%s.%s>", component.name, functionName);
 
         tasks.push(function(callback) {
-            component.module[functionName](userConfig, configData, function(err) {
+            component.module[functionName](userConfig, component.config, configData, function(err) {
                 if(err) {
                     console.log("Error running <%s.%s>: %s", component.name, functionName, err);
                 }
@@ -349,8 +352,9 @@ function runForEachComponent(functionName, components, userConfig, configData, c
     });
 }
 
-function writeConfigFile(userConfig, configData, callback) {
+function writeConfigFile(callback) {
     jsonfile.writeFile(userConfig.output, configData, function(err) {
         return callback(err);
     });
 }
+
