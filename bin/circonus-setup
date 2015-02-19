@@ -122,6 +122,8 @@ function initialize(callback) {
 
 // Component prompts: for any components that need to prompt the user for more information
 function componentPrompts(callback) {
+    var tasks = [];
+
     // Run prompts for each component
     tasks.push(function(callback) {
         runForEachComponent("prompts", function(err) {
