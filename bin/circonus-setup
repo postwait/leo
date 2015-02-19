@@ -8,6 +8,9 @@ var readline = require('readline');
 var minimist = require('minimist');
 var jsonfile = require('jsonfile');
 
+libDir = path.resolve(__dirname, "..", "lib");
+var Component = require(path.join(libDir, "Component.js"));
+
 nadURL = "http://updates.circonus.net/node-agent/packages/";
 
 var userConfig = minimist(process.argv.slice(2), {
@@ -295,12 +298,7 @@ function getAvailableComponents(callback) {
             fullPath = path.resolve(componentsDir, filename);
 
             if(path.extname(fullPath) == '.js') {
-                component = {
-                    name: path.basename(fullPath).replace('.js', ''),
-                    module: require(fullPath),
-                    config: {}
-                };
-
+                component = new Component(fullPath);
                 includedComponents.push(component);
 
                 if(!component.module.initialize) {
