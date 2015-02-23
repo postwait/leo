@@ -419,7 +419,9 @@ function addChecks(callback) {
 }
 
 function addGraphs(callback) {
-    var tasks = async.map(configData.graphs, function(graph, callback) {
+    configData.graphIDs = [];
+
+    async.each(configData.graphs, function(graph, callback) {
         var graphData = {
             "title": graph["title"],
             "datapoints": []
@@ -442,16 +444,18 @@ function addGraphs(callback) {
         });
 
         userConfig.api.post("/graph", graphData, function(code, err, body) {
-            return callback(err);
+            if(err) {
+                console.error("Error adding graph: %s", err);
+                return callback(err);
+            }
+
+            configData.graphIDs.push(body._cid);
+            return callback();
         });
 
     }, function(err, tasks) {
         if(err) {
             return callback(err);
         }
-
-        async.parallel(tasks, function(err) {
-            return callback(err);
-        });
     });
 }
