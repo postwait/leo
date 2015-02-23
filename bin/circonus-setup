@@ -22,6 +22,7 @@ var userConfig = minimist(process.argv.slice(2), {
         "authtoken": ["k", "auth-token", "auth_token"],
         "brokerid": ["b", "broker-id", "broker_id"],
         "nadpath": ["nad-path", "nad_path"],
+        "alldefault": ["all-default", "all_default", "alldefaults", "all-defaults", "all_defaults"],
         "output": "o"
     }
 });
@@ -172,7 +173,14 @@ function finish(callback) {
                 console.error(err);
             }
 
-            return callback(err);
+            addGraphs(function(err) {
+                if(err) {
+                    console.error("Error adding graphs via API:");
+                    console.error(err);
+                }
+
+                return callback(err);
+            });
         });
     });
 
@@ -265,6 +273,17 @@ function getSystemInfo(callback) {
         });
     });
 
+    tasks.push(function(callback) {
+        promptUser({
+            varname: "alldefault",
+            text: "Would you like to use default selections for all checks and metrics?",
+            defaultValue: "Y",
+            modifyResponse: function(r) { return (r.toLowerCase().charAt(0) == "y"); },
+        }, function(err) {
+            return callback(err);
+        });
+    });
+
     async.series(tasks, function(err) {
         return callback(err);
     });
@@ -287,11 +306,20 @@ function promptUser(prompt, callback) {
         promptText = util.format("[%s] > ", prompt.defaultValue);
     }
 
-    rl.question(promptText, function(answer) {
-        userConfig[prompt.varname] = answer || prompt.defaultValue;
-        rl.close();
+    async.doUntil(function(callback) {
+        rl.question(promptText, function(answer) {
+            answer = answer || prompt.defaultValue;
 
-        return callback();
+            if(prompt.modifyResponse) {
+                answer = prompt.modifyResponse(answer);
+            }
+
+            userConfig[prompt.varname] = answer;
+            return callback();
+        });
+    }, function() { return (!prompt.selections || prompt.selections.indexOf(userConfig[prompt.varname]) > -1) }, function(err) {
+        rl.close();
+        return callback(err);
     });
 }
 
@@ -370,7 +398,7 @@ function writeConfigFile(callback) {
 }
 
 function addChecks(callback) {
-    checkBundleData = {
+    var checkBundleData = {
         "brokers": [ "/broker/" + userConfig.brokerid ],
         "config": {
             "url": url.format({"protocol": "http", "hostname": userConfig.target}),
@@ -385,6 +413,45 @@ function addChecks(callback) {
     };
 
     userConfig.api.post("/check_bundle", checkBundleData, function(code, err, body) {
+        configData.checkID = body._checks[0].replace("/check/", "");
         return callback(err);
+    });
+}
+
+function addGraphs(callback) {
+    var tasks = async.map(configData.graphs, function(graph, callback) {
+        var graphData = {
+            "title": graph["title"],
+            "datapoints": []
+        };
+
+        graph.datapoints.forEach(function(datapoint) {
+            graphData.datapoints.push({
+                "axis": "l",
+                "check_id": configData.checkID,
+                "color": datapoint.color || "#4f4f9f",
+                "data_formula": null,
+                "derive": "gauge",
+                "hidden": false,
+                "legend_formula": null,
+                "metric_name": datapoint.metric_name,
+                "metric_type": "numeric",
+                "name": datapoint.name || datapoint.metric_name,
+                "stack": null
+            });
+        });
+
+        userConfig.api.post("/graph", graphData, function(code, err, body) {
+            return callback(err);
+        });
+
+    }, function(err, tasks) {
+        if(err) {
+            return callback(err);
+        }
+
+        async.parallel(tasks, function(err) {
+            return callback(err);
+        });
     });
 }
