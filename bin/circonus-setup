@@ -165,23 +165,10 @@ function finish(callback) {
         });
     });
 
-    // Add checks via API
+    // Add checks, graphs, and worksheets via API
+    var api_tasks = [addChecks, addGraphs, addWorksheet];
     tasks.push(function(callback) {
-        addChecks(function(err) {
-            if(err) {
-                console.error("Error adding checks via API:");
-                console.error(err);
-            }
-
-            addGraphs(function(err) {
-                if(err) {
-                    console.error("Error adding graphs via API:");
-                    console.error(err);
-                }
-
-                return callback(err);
-            });
-        });
+        async.series(api_tasks, callback);
     });
 
     // Write config file
@@ -454,8 +441,17 @@ function addGraphs(callback) {
         });
 
     }, function(err, tasks) {
-        if(err) {
-            return callback(err);
-        }
+        return callback(err);
+    });
+}
+
+function addWorksheet(callback) {
+    var worksheetData = {
+        "title": userConfig.target,
+        "graphs": configData.graphIDs.map(function(id) { return {"graph": id}; })
+    };
+
+    userConfig.api.post("/worksheet", worksheetData, function(code, err, body) {
+        return callback(err);
     });
 }
