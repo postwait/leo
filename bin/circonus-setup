@@ -15,7 +15,7 @@ var Component = require(path.join(libDir, "Component.js"));
 
 nadURL = "http://updates.circonus.net/node-agent/packages/";
 
-var userConfig = minimist(process.argv.slice(2), {
+var config = minimist(process.argv.slice(2), {
     alias: {
         "help": "h",
         "target": "t",
@@ -23,23 +23,22 @@ var userConfig = minimist(process.argv.slice(2), {
         "brokerid": ["b", "broker-id", "broker_id"],
         "nadpath": ["nad-path", "nad_path"],
         "alldefault": ["all-default", "all_default", "alldefaults", "all-defaults", "all_defaults"],
-        "output": "o"
+        "configfile": ["c", "config-file", "config_file"]
     }
 });
 
-if(userConfig.help) {
+if(config.help) {
     help();
     process.exit(-1);
 }
 
-var configData = {
-    graphs: [],
-    metrics: []
-};
+config.graphs = config.graphs || [];
+config.metrics = config.metrics || [];
 
 var includedComponents = [];
 
 async.series([
+    readConfigFile,
     getNadPath,
     initialize,
     componentPrompts,
@@ -53,23 +52,51 @@ async.series([
 
 /* -------------------------------------------------------------------------- */
 
-// Components need the correct path to nad before they can initialize
-function getNadPath(callback) {
-    if(!userConfig.nadpath) {
-        userConfig.nadpath = "/opt/circonus";
+// Read config file before doing anything else
+function readConfigFile(callback) {
+    if(!config.configfile) {
+        return callback();
     }
 
-    if(!fs.existsSync(userConfig.nadpath) || !fs.existsSync(path.join(userConfig.nadpath, "sbin", "nad"))) {
+    fs.exists(config.configfile, function(exists) {
+        if(!exists) {
+            console.info("Config file %s does not exist. Ignoring.", config.configfile);
+            return callback();
+        }
+
+        jsonfile.readFile(config.configfile, function(err, fileConfig) {
+            if(err) {
+                console.error("Couldn't read config file: %s", err);
+                callback(err);
+            }
+
+            fileConfig.forEach(function(v, i) {
+                // Command-line arguments still override config file
+                config[i] = config[i] || fileConfig[i];
+            });
+
+            return callback();
+        });
+    });
+}
+
+// Components need the correct path to nad before they can initialize
+function getNadPath(callback) {
+    if(!config.nadpath) {
+        config.nadpath = "/opt/circonus";
+    }
+
+    if(!fs.existsSync(config.nadpath) || !fs.existsSync(path.join(config.nadpath, "sbin", "nad"))) {
         promptUser({
             varname: "nadpath",
             text: util.format("Node.js Agent not found at %s.\n" +
                               "If nad is not installed, please visit %s and download the correct package for your platform.\n" +
                               "If nad is installed in another location, enter that location.",
-                              userConfig.nadpath, nadURL)
+                              config.nadpath, nadURL)
         }, function(err) {
-            if(!fs.existsSync(userConfig.nadpath) || !fs.existsSync(path.join(userConfig.nadpath, "sbin", "nad"))) {
+            if(!fs.existsSync(config.nadpath) || !fs.existsSync(path.join(config.nadpath, "sbin", "nad"))) {
                 return callback(util.format("nad not found at %s. Please visit %s and download the correct package for your platform.",
-                                            userConfig.nadpath, nadURL));
+                                            config.nadpath, nadURL));
             }
 
             return callback(err);
@@ -83,6 +110,7 @@ function getNadPath(callback) {
 function initialize(callback) {
     var tasks = [];
 
+    // Read config file
     // Collect general system info from user
     tasks.push(function(callback) {
         getSystemInfo(function(err) {
@@ -149,7 +177,7 @@ function main(callback) {
     });
 }
 
-// Finish: write config file, run nad
+// Finish: write config file, do API calls
 function finish(callback) {
     var tasks = [];
 
@@ -219,21 +247,21 @@ function getSystemInfo(callback) {
             varname: "authtoken",
             text: "Please enter your Circonus auth token."
         }, function(err) {
-            userConfig.api = require('circonusapi2');
-            userConfig.api.setup(userConfig.authtoken, "nad");
+            config.api = require('circonusapi2');
+            config.api.setup(config.authtoken, "nad");
             return callback(err);
         });
     });
 
     tasks.push(function(callback) {
-        userConfig.api.get("/broker", null, function(code, err, body) {
+        config.api.get("/broker", null, function(code, err, body) {
             if(err) {
                 console.error("Couldn't get list of available brokers: %s", err);
                 return callback(err);
             }
-            userConfig.availableBrokers = body;
+            config.availableBrokers = body;
 
-            userConfig.availableBrokers.forEach(function(broker) {
+            config.availableBrokers.forEach(function(broker) {
                 var match = broker._cid.match( /\/broker\/(\d+)$/ );
                 if(!match) {
                     return callback(util.format("Couldn't parse broker ID '%s'.", broker._cid));
@@ -242,12 +270,12 @@ function getSystemInfo(callback) {
                 broker.id = match[1];
             });
 
-            userConfig.availableBrokers.sort(function(a, b) {
+            config.availableBrokers.sort(function(a, b) {
                 return a.id - b.id;
             });
 
             var promptText = "Select a broker to use:\n";
-            userConfig.availableBrokers.forEach(function(broker) {
+            config.availableBrokers.forEach(function(broker) {
                 promptText += util.format("  %d. %s\n", broker.id, broker._name);
             });
 
@@ -277,7 +305,7 @@ function getSystemInfo(callback) {
 }
 
 function promptUser(prompt, callback) {
-    if(userConfig[prompt.varname]) {
+    if(config[prompt.varname]) {
         return callback();
     }
 
@@ -301,10 +329,10 @@ function promptUser(prompt, callback) {
                 answer = prompt.modifyResponse(answer);
             }
 
-            userConfig[prompt.varname] = answer;
+            config[prompt.varname] = answer;
             return callback();
         });
-    }, function() { return (!prompt.selections || prompt.selections.indexOf(userConfig[prompt.varname]) > -1) }, function(err) {
+    }, function() { return (!prompt.selections || prompt.selections.indexOf(config[prompt.varname]) > -1) }, function(err) {
         rl.close();
         return callback(err);
     });
@@ -324,8 +352,7 @@ function getAvailableComponents(callback) {
 
             if(path.extname(fullPath) == '.js') {
                 component = new Component(fullPath);
-                component.userConfig = userConfig;
-                component.configData = configData;
+                component.config = config;
                 includedComponents.push(component);
 
                 if(!component.initialize) {
@@ -379,36 +406,37 @@ function runForEachComponent(functionName, opts, callback) {
 }
 
 function writeConfigFile(callback) {
-    jsonfile.writeFile(userConfig.output, configData, function(err) {
+    jsonfile.writeFile(config.configfile, config, function(err) {
+        console.info("Wrote config to %s.", config.configfile);
         return callback(err);
     });
 }
 
 function addChecks(callback) {
     var checkBundleData = {
-        "brokers": [ "/broker/" + userConfig.brokerid ],
+        "brokers": [ "/broker/" + config.brokerid ],
         "config": {
-            "url": url.format({"protocol": "http", "hostname": userConfig.target}),
+            "url": url.format({"protocol": "http", "hostname": config.target}),
             "port": 2609
         },
-        "metrics": configData.metrics,
+        "metrics": config.metrics,
         "period": 60,
         "status": "active",
-        "target": userConfig.target,
+        "target": config.target,
         "timeout": 10,
         "type": "json"
     };
 
-    userConfig.api.post("/check_bundle", checkBundleData, function(code, err, body) {
-        configData.checkID = body._checks[0].replace("/check/", "");
+    config.api.post("/check_bundle", checkBundleData, function(code, err, body) {
+        config.checkID = body._checks[0].replace("/check/", "");
         return callback(err);
     });
 }
 
 function addGraphs(callback) {
-    configData.graphIDs = [];
+    config.graphIDs = [];
 
-    async.each(configData.graphs, function(graph, callback) {
+    async.each(config.graphs, function(graph, callback) {
         var graphData = {
             "title": graph["title"],
             "datapoints": []
@@ -417,7 +445,7 @@ function addGraphs(callback) {
         graph.datapoints.forEach(function(datapoint) {
             graphData.datapoints.push({
                 "axis": "l",
-                "check_id": configData.checkID,
+                "check_id": config.checkID,
                 "color": datapoint.color || "#4f4f9f",
                 "data_formula": null,
                 "derive": "gauge",
@@ -430,13 +458,13 @@ function addGraphs(callback) {
             });
         });
 
-        userConfig.api.post("/graph", graphData, function(code, err, body) {
+        config.api.post("/graph", graphData, function(code, err, body) {
             if(err) {
                 console.error("Error adding graph: %s", err);
                 return callback(err);
             }
 
-            configData.graphIDs.push(body._cid);
+            config.graphIDs.push(body._cid);
             return callback();
         });
 
@@ -447,11 +475,11 @@ function addGraphs(callback) {
 
 function addWorksheet(callback) {
     var worksheetData = {
-        "title": userConfig.target,
-        "graphs": configData.graphIDs.map(function(id) { return {"graph": id}; })
+        "title": config.target,
+        "graphs": config.graphIDs.map(function(id) { return {"graph": id}; })
     };
 
-    userConfig.api.post("/worksheet", worksheetData, function(code, err, body) {
+    config.api.post("/worksheet", worksheetData, function(code, err, body) {
         return callback(err);
     });
 }
