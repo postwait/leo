@@ -3,8 +3,6 @@
 
 var async = require('async');
 var fs = require('fs');
-var jsonfile = require('jsonfile');
-var minimist = require('minimist');
 var path = require('path');
 var readline = require('readline');
 var url = require('url');
@@ -12,20 +10,12 @@ var util = require('util');
 
 libDir = path.resolve(__dirname, "..", "lib");
 var Component = require(path.join(libDir, "Component.js"));
+var Config = require(path.join(libDir, "Config.js"));
 
 nadURL = "http://updates.circonus.net/node-agent/packages/";
 
-var config = minimist(process.argv.slice(2), {
-    alias: {
-        "help": "h",
-        "target": "t",
-        "authtoken": ["k", "auth-token", "auth_token"],
-        "brokerid": ["b", "broker-id", "broker_id"],
-        "nadpath": ["nad-path", "nad_path"],
-        "alldefault": ["all-default", "all_default", "alldefaults", "all-defaults", "all_defaults"],
-        "configfile": ["c", "config-file", "config_file"]
-    }
-});
+var config = new Config();
+config.readCommandLine();
 
 if(config.help) {
     help();
@@ -38,7 +28,7 @@ config.metrics = config.metrics || [];
 var includedComponents = [];
 
 async.series([
-    readConfigFile,
+    config.readFromFile.bind(config),
     getNadPath,
     initialize,
     componentPrompts,
@@ -51,34 +41,6 @@ async.series([
 });
 
 /* -------------------------------------------------------------------------- */
-
-// Read config file before doing anything else
-function readConfigFile(callback) {
-    if(!config.configfile) {
-        return callback();
-    }
-
-    fs.exists(config.configfile, function(exists) {
-        if(!exists) {
-            console.info("Config file %s does not exist. Ignoring.", config.configfile);
-            return callback();
-        }
-
-        jsonfile.readFile(config.configfile, function(err, fileConfig) {
-            if(err) {
-                console.error("Couldn't read config file: %s", err);
-                callback(err);
-            }
-
-            fileConfig.forEach(function(v, i) {
-                // Command-line arguments still override config file
-                config[i] = config[i] || fileConfig[i];
-            });
-
-            return callback();
-        });
-    });
-}
 
 // Components need the correct path to nad before they can initialize
 function getNadPath(callback) {
@@ -201,7 +163,7 @@ function finish(callback) {
 
     // Write config file
     tasks.push(function(callback) {
-        writeConfigFile(function(err) {
+        config.writeToFile(function(err) {
             if(err) {
                 console.error("Error writing config file:");
                 console.error(err);
@@ -403,13 +365,6 @@ function runForEachComponent(functionName, opts, callback) {
             return callback(err);
         });
     }
-}
-
-function writeConfigFile(callback) {
-    jsonfile.writeFile(config.configfile, config, function(err) {
-        console.info("Wrote config to %s.", config.configfile);
-        return callback(err);
-    });
 }
 
 function addChecks(callback) {
