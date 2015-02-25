@@ -437,10 +437,31 @@ function addGraphs(callback) {
 function addWorksheet(callback) {
     var worksheetData = {
         "title": config.target,
-        "graphs": config.graphIDs.map(function(id) { return {"graph": id}; })
+        "graphs": config.graphIDs.map(function(id) { return {"graph": id}; }),
+        "tags": ["created-by:cup"],
     };
 
-    config.api.post("/worksheet", worksheetData, function(code, err, body) {
-        return callback(err);
+    config.api.get("/worksheet", {"f_title": config.target, "f_tags_has": "created-by:cup"}, function(code, err, body) {
+        // If a worksheet for this host has already been created by this script, update it instead of creating a new one
+        // If there are multiple worksheets, only update one, and warn the user
+        if(body.length > 0) {
+            config.api.put("/worksheet/" + body[0]._cid, worksheetData, function(code, err, body) {
+                return callback(err);
+            });
+        }
+        else {
+            config.api.post("/worksheet", worksheetData, function(code, err, body) {
+                return callback(err);
+            });
+        }
+
+        if(body.length > 1) {
+            console.warn("More than one existing worksheet was found for this host:");
+            for(i in body) {
+                console.warn("  %s", body[i]._cid);
+            }
+            console.warn("Only updating one of these:  %s", body[0]._cid);
+            console.warn("The others should most likely be deleted.");
+        }
     });
 }
