@@ -188,7 +188,9 @@ function help(err) {
     console.info("\t%s\t an IP or hostname for this server accessible by the Circonus broker", "-t, --target");
     console.info("\t%s\t your Circonus auth token", "-k, --authtoken");
     console.info("\t%s\t broker ID to use", "-b, --brokerid");
-    console.info("\t%s\t location to write config file to", "-o, --output");
+    console.info("\t%s\t location of config file", "-c, --configfile");
+    console.info("\t%s\t skip prompts for metrics/graphs and use all default values", "--alldefault");
+    console.info("\t%s\t location of nad installation (default: /opt/circonus)", "--nadpath");
     console.info();
 }
 
