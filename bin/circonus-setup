@@ -22,9 +22,6 @@ if(config.help) {
     process.exit(-1);
 }
 
-config.graphs = config.graphs || [];
-config.metrics = config.metrics || [];
-
 var includedComponents = [];
 
 async.series([
@@ -252,10 +249,17 @@ function getSystemInfo(callback) {
         });
     });
 
+    // If a config file is specified and it existed, use its selections as "defaults",
+    // and change prompt text to reflect that
+    var promptText = "Would you like to use default selections for all checks and metrics?";
+    if(config.configread) {
+        promptText = "Would you like to use selections from the configuration file for all checks and metrics?";
+    }
+
     tasks.push(function(callback) {
         promptUser({
             varname: "alldefault",
-            text: "Would you like to use default selections for all checks and metrics?",
+            text: promptText,
             defaultValue: "Y",
             modifyResponse: function(r) { return (r.toLowerCase().charAt(0) == "y"); },
         }, function(err) {
