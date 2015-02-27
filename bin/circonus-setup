@@ -136,6 +136,27 @@ function main(callback) {
     });
 }
 
+// API Calls: actually create all the selected metrics/graphs
+function apiCalls(callback) {
+    // Run apiCalls for each component
+    tasks.push(function(callback) {
+        runForEachComponent("apiCalls", {}, function(err) {
+            if(err) {
+                console.error("Error in component API calls:");
+                console.error(err);
+            }
+
+            return callback(err);
+        });
+    });
+
+    // Add checks, graphs, and worksheets
+    var apiTasks = [addChecks, addGraphs, addWorksheet];
+    tasks.push(function(callback) {
+        async.series(apiTasks, callback);
+    });
+};
+
 // Finish: write config file, do API calls
 function finish(callback) {
     var tasks = [];
@@ -150,12 +171,6 @@ function finish(callback) {
 
             return callback(err);
         });
-    });
-
-    // Add checks, graphs, and worksheets via API
-    var apiTasks = [addChecks, addGraphs, addWorksheet];
-    tasks.push(function(callback) {
-        async.series(apiTasks, callback);
     });
 
     // Write config file
