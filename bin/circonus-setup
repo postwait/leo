@@ -30,6 +30,7 @@ async.series([
     initialize,
     componentPrompts,
     main,
+    apiCalls,
     finish
 ], function(err) {
     if(err) {
@@ -138,6 +139,8 @@ function main(callback) {
 
 // API Calls: actually create all the selected metrics/graphs
 function apiCalls(callback) {
+    var tasks = [];
+
     // Run apiCalls for each component
     tasks.push(function(callback) {
         runForEachComponent("apiCalls", {}, function(err) {
@@ -154,6 +157,10 @@ function apiCalls(callback) {
     var apiTasks = [addChecks, addGraphs, addWorksheet];
     tasks.push(function(callback) {
         async.series(apiTasks, callback);
+    });
+
+    async.parallel(tasks, function(err) {
+        return callback(err);
     });
 };
 
