@@ -331,7 +331,6 @@ function promptUser(prompt, callback) {
 
 function getAvailableComponents(callback) {
     var componentsDir = path.resolve(__dirname, '..', 'components');
-    var tasks = [];
 
     fs.readdir(componentsDir, function(err, files) {
         if(err) {
@@ -349,9 +348,6 @@ function getAvailableComponents(callback) {
                 if(!component.initialize) {
                     return;
                 }
-
-                tasks.push(function(callback) {
-                });
             }
         });
 
