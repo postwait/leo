@@ -370,8 +370,11 @@ function runForEachComponent(functionName, opts, callback) {
 
     includedComponents.forEach(function(component) {
         if(!component[functionName]) {
+            config.logdebug("skipping %s.%s", component.name, functionName);
             return;
         }
+
+        config.logdebug("running %s.%s", component.name, functionName);
 
         tasks.push(function(callback) {
             component[functionName](function(err) {
