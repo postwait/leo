@@ -4,9 +4,10 @@
 var async = require('async');
 var fs = require('fs');
 var path = require('path');
-var readline = require('readline');
+var interrogator = require('interrogator');
 var url = require('url');
 var util = require('util');
+var validator = require('validator');
 
 libDir = path.resolve(__dirname, "..", "lib");
 var Component = require(path.join(libDir, "Component.js"));
@@ -48,18 +49,13 @@ function getNadPath(callback) {
     }
 
     if(!fs.existsSync(config.nadpath) || !fs.existsSync(path.join(config.nadpath, "sbin", "nad"))) {
-        promptUser({
-            varname: "nadpath",
-            text: util.format("Node.js Agent not found at %s.\n" +
-                              "If nad is not installed, please visit %s and download the correct package for your platform.\n" +
-                              "If nad is installed in another location, enter that location.",
-                              config.nadpath, nadURL)
-        }, function(err) {
-            if(!fs.existsSync(config.nadpath) || !fs.existsSync(path.join(config.nadpath, "sbin", "nad"))) {
-                return callback(util.format("nad not found at %s. Please visit %s and download the correct package for your platform.",
-                                            config.nadpath, nadURL));
-            }
+        var prompttext = util.format("Node.js Agent not found at %s.\n" +
+                                     "If nad is not installed, please visit %s and download the correct package for your platform.\n" +
+                                     "If nad is installed in another location, enter that location.",
+                                     config.nadpath, nadURL)
 
+        interrogator.question({"description": prompttext, "type": interrogator.filepath, "required": true}, function(err, answer) {
+            config.nadpath = answer;
             return callback(err);
         });
     }
@@ -217,114 +213,61 @@ function help(err) {
 function getSystemInfo(callback) {
     var tasks = [];
 
-    tasks.push(function(callback) {
-        promptUser({
-            varname: "target",
-            text: "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host."
-        }, function(err) {
-            return callback(err);
-        });
-    });
-
-    tasks.push(function(callback) {
-        promptUser({
-            varname: "authtoken",
-            text: "Please enter your Circonus auth token."
-        }, function(err) {
-            config.api = require('circonusapi2');
-            config.api.setup(config.authtoken, "nad");
-            return callback(err);
-        });
-    });
-
-    tasks.push(function(callback) {
-        config.api.get("/broker", null, function(code, err, body) {
-            if(err) {
-                console.error("Couldn't get list of available brokers: %s", err);
-                return callback(err);
+    var prompts = [
+        {
+            "name": "target",
+            "description": "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host.",
+            "error": "A target is required.",
+            "required": "true"
+        },
+        {
+            "name": "authtoken",
+            "description": "Please enter your Circonus auth token.",
+            "error": "An auth token is required.",
+            "required": "true",
+            "runAfter": function(answer, callback) {
+                config.api = require('circonusapi2');
+                config.api.setup(config.authtoken, "nad");
+                return callback();
             }
-            config.availableBrokers = body;
+        },
+        {
+            "name": "brokerid",
+            "description": "Select a broker to use.",
+            "error": "A broker ID is required.",
+            "type": interrogator.integer,
+            "required": "true",
+            "optionsFetcher": function(callback) {
+                config.api.get("/broker", null, function(code, err, body) {
+                    if(err) {
+                        console.error("Couldn't get list of available brokers: %s", err);
+                        return callback(err);
+                    }
 
-            config.availableBrokers.forEach(function(broker) {
-                var match = broker._cid.match( /\/broker\/(\d+)$/ );
-                if(!match) {
-                    return callback(util.format("Couldn't parse broker ID '%s'.", broker._cid));
-                }
+                    var brokers = {};
+                    for(i in body) {
+                        var match = body[i]._cid.match( /\/broker\/(\d+)$/ );
+                        if(!match) {
+                            return callback(new Error(util.format("Couldn't parse broker ID '%s'.", body[i]._cid)));
+                        }
 
-                broker.id = match[1];
-            });
+                        brokers[validator.toInt(match[1])] = body[i]._name;
+                    }
 
-            config.availableBrokers.sort(function(a, b) {
-                return a.id - b.id;
-            });
-
-            var promptText = "Select a broker to use:\n";
-            config.availableBrokers.forEach(function(broker) {
-                promptText += util.format("  %d. %s\n", broker.id, broker._name);
-            });
-
-            promptUser({
-                varname: "brokerid",
-                text: promptText
-            }, function(err) {
-                return callback(err);
-            });
-        });
-    });
-
-    // If a config file is specified and it existed, use its selections as "defaults",
-    // and change prompt text to reflect that
-    var promptText = "Would you like to use default selections for all checks and metrics?";
-    if(config.configread) {
-        promptText = "Would you like to use selections from the configuration file for all checks and metrics?";
-    }
-
-    tasks.push(function(callback) {
-        promptUser({
-            varname: "alldefault",
-            text: promptText,
-            defaultValue: "Y",
-            modifyResponse: function(r) { return (r.toLowerCase().charAt(0) == "y"); },
-        }, function(err) {
-            return callback(err);
-        });
-    });
-
-    async.series(tasks, function(err) {
-        return callback(err);
-    });
-}
-
-function promptUser(prompt, callback) {
-    if(config[prompt.varname]) {
-        return callback();
-    }
-
-    console.info(prompt.text);
-
-    var rl = readline.createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
-
-    var promptText = "> ";
-    if(prompt.defaultValue) {
-        promptText = util.format("[%s] > ", prompt.defaultValue);
-    }
-
-    async.doUntil(function(callback) {
-        rl.question(promptText, function(answer) {
-            answer = answer || prompt.defaultValue;
-
-            if(prompt.modifyResponse) {
-                answer = prompt.modifyResponse(answer);
+                    return callback(null, brokers);
+                });
             }
+        },
+        {
+            "name": "alldefault",
+            "description": (config.configread ? "Would you like to use selections from the configuration file for all checks and metrics?"
+                            : "Would you like to use default selections for all checks and metrics?"),
+            "type": interrogator.boolean,
+            "default": true
+        }
+    ];
 
-            config[prompt.varname] = answer;
-            return callback();
-        });
-    }, function() { return (!prompt.selections || prompt.selections.indexOf(config[prompt.varname]) > -1) }, function(err) {
-        rl.close();
+    interrogator.updateObject(config, prompts, function(err) {
         return callback(err);
     });
 }
