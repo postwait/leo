@@ -471,7 +471,7 @@ function addWorksheet(callback) {
         // If a worksheet for this host has already been created by this script, update it instead of creating a new one
         // If there are multiple worksheets, only update one, and warn the user
         if(body.length > 0) {
-            config.api.put("/worksheet/" + body[0]._cid, worksheetData, function(code, err, body) {
+            config.api.put(body[0]._cid, worksheetData, function(code, err, body) {
                 return callback(err);
             });
         }
