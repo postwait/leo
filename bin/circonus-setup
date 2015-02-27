@@ -153,9 +153,9 @@ function finish(callback) {
     });
 
     // Add checks, graphs, and worksheets via API
-    var api_tasks = [addChecks, addGraphs, addWorksheet];
+    var apiTasks = [addChecks, addGraphs, addWorksheet];
     tasks.push(function(callback) {
-        async.series(api_tasks, callback);
+        async.series(apiTasks, callback);
     });
 
     // Write config file
