@@ -136,34 +136,20 @@ function main(callback) {
     });
 }
 
-// API Calls: actually create all the selected metrics/graphs
+// API Calls: actually create all the selected metrics/graphs, then create worksheet
 function apiCalls(callback) {
-    var tasks = [];
-
     // Run apiCalls for each component
-    tasks.push(function(callback) {
-        runForEachComponent("apiCalls", {}, function(err) {
-            if(err) {
-                console.error("Error in component API calls:");
-                console.error(err);
-            }
+    runForEachComponent("apiCalls", {}, function(err) {
+        if(err) {
+            console.error("Error in component API calls:");
+            console.error(err);
+        }
 
-            return callback(err);
-        });
-    });
-
-    // Add checks, graphs, and worksheets
-    var apiTasks = [addChecks, addGraphs, addWorksheet];
-    tasks.push(function(callback) {
-        async.series(apiTasks, callback);
-    });
-
-    async.parallel(tasks, function(err) {
-        return callback(err);
+        return addWorksheet(callback);
     });
 };
 
-// Finish: write config file, do API calls
+// Finish: write config file, run component cleanup
 function finish(callback) {
     var tasks = [];
 
@@ -340,71 +326,15 @@ function runForEachComponent(functionName, opts, callback) {
     }
 }
 
-function addChecks(callback) {
-    var checkBundleData = {
-        "brokers": [ "/broker/" + config.brokerid ],
-        "config": {
-            "url": url.format({"protocol": "http", "hostname": config.target}),
-            "port": 2609
-        },
-        "metrics": config.metrics,
-        "period": 60,
-        "status": "active",
-        "target": config.target,
-        "timeout": 10,
-        "type": "json"
-    };
-
-    config.api.post("/check_bundle", checkBundleData, function(code, err, body) {
-        config.checkID = body._checks[0].replace("/check/", "");
-        return callback(err);
-    });
-}
-
-function addGraphs(callback) {
-    config.graphIDs = [];
-
-    async.each(config.graphs, function(graph, callback) {
-        var graphData = {
-            "title": graph["title"],
-            "datapoints": []
-        };
-
-        graph.datapoints.forEach(function(datapoint) {
-            graphData.datapoints.push({
-                "axis": "l",
-                "check_id": config.checkID,
-                "color": datapoint.color || "#4f4f9f",
-                "data_formula": null,
-                "derive": "gauge",
-                "hidden": false,
-                "legend_formula": null,
-                "metric_name": datapoint.metric_name,
-                "metric_type": "numeric",
-                "name": datapoint.name || datapoint.metric_name,
-                "stack": null
-            });
-        });
-
-        config.api.post("/graph", graphData, function(code, err, body) {
-            if(err) {
-                console.error("Error adding graph: %s", err);
-                return callback(err);
-            }
-
-            config.graphIDs.push(body._cid);
-            return callback();
-        });
-
-    }, function(err, tasks) {
-        return callback(err);
-    });
-}
-
 function addWorksheet(callback) {
+    var graphIDs = [];
+    includedComponents.forEach(function(component) {
+        graphIDs = graphIDs.concat(component.graphIDs);
+    });
+
     var worksheetData = {
         "title": config.target,
-        "graphs": config.graphIDs.map(function(id) { return {"graph": id}; }),
+        "graphs": graphIDs.map(function(id) { return {"graph": id}; }),
         "tags": ["created-by:cup"],
     };
 

@@ -3,6 +3,8 @@ var heredoc = require('heredoc');
 var util = require('util');
 
 module.exports = function Postgres() {
+    this.checkType = "postgres";
+
     this.defaultMetrics = ["connections`connections", "connections`total_used"];
     this.defaultGraphs = [
         {
@@ -28,11 +30,6 @@ module.exports = function Postgres() {
     };
 
     this.databases = [];
-
-    this.initialize = function(callback) {
-        this.enabledMetrics = this.defaultMetrics;
-        return callback();
-    };
 
     this.addEnabledMetrics = function(callback) {
         return callback();
