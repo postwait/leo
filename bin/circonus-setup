@@ -262,8 +262,8 @@ function getSystemInfo(callback) {
         },
         {
             "name": "alldefault",
-            "description": (config.configread ? "Would you like to use selections from the configuration file for all checks and metrics?"
-                            : "Would you like to use default selections for all checks and metrics?"),
+            "description": (config.configread ? "Would you like to use selections from the configuration file for all checks and metrics? [Y/n]"
+                            : "Would you like to use default selections for all checks and metrics? [Y/n]"),
             "type": interrogator.boolean,
             "default": true
         }
