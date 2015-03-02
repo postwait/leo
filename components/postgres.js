@@ -1,5 +1,6 @@
 var async = require('async');
 var heredoc = require('heredoc');
+var util = require('util');
 
 var availableCheckBundles = {
     "connections": {
@@ -38,9 +39,50 @@ module.exports = function Postgres() {
     };
 
     this.prompts = function(callback) {
-        //todo
-        this.connectionString = "host=nad-1.kingofnopants.net user=circonus password=circonus dbname=postgres";
-        return callback();
+        var self = this;
+        var pgConfig = self.componentConfig();
+
+        if(self.config.alldefault && pgConfig.host && pgConfig.user && pgConfig.password && pgConfig.dbname) {
+            return callback();
+        }
+
+        var prompts = [
+            {
+                "name": "host",
+                "description": util.format("Please enter the hostname that Circonus will use to connect to your database [default: %s]", self.config.target),
+                "default": this.config.target
+            },
+            {
+                "name": "user",
+                "description": "Please enter the username of the Postgres account that Circonus will use to connect to your database.",
+                "error": "A username is required.",
+                "required": true
+            },
+            {
+                "name": "password",
+                "description": "Please enter the password for the Postgres account.",
+                "error": "A password is required.",
+                "silent": true,
+                "required": true
+            },
+            {
+                "name": "dbname",
+                "description": "Please enter the name of the Postgres database.",
+                "error": "A database name is required.",
+                "required": true
+            }
+        ];
+
+        self.config.interrogator.updateObject(self.config.components.postgres, prompts, function(err) {
+            var stringParts = [];
+            for(i in self.componentConfig()) {
+                stringParts.push(util.format("%s=%s", i, self.componentConfig()[i]));
+            }
+
+            self.connectionString = stringParts.join(" ");
+
+            return callback(err);
+        });
     };
 
     this.apiCalls = function(callback) {
