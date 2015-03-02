@@ -18,6 +18,8 @@ nadURL = "http://updates.circonus.net/node-agent/packages/";
 var config = new Config();
 config.readCommandLine();
 
+config.interrogator = interrogator;
+
 if(config.help) {
     help();
     process.exit(-1);
