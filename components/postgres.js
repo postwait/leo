@@ -42,10 +42,6 @@ module.exports = function Postgres() {
         var self = this;
         var pgConfig = self.componentConfig();
 
-        if(self.config.alldefault && pgConfig.host && pgConfig.user && pgConfig.password && pgConfig.dbname) {
-            return callback();
-        }
-
         var prompts = [
             {
                 "name": "host",
@@ -73,10 +69,10 @@ module.exports = function Postgres() {
             }
         ];
 
-        self.config.interrogator.updateObject(self.config.components.postgres, prompts, function(err) {
+        self.config.interrogator.updateObject(pgConfig, prompts, function(err) {
             var stringParts = [];
-            for(i in self.componentConfig()) {
-                stringParts.push(util.format("%s=%s", i, self.componentConfig()[i]));
+            for(i in pgConfig) {
+                stringParts.push(util.format("%s=%s", i, pgConfig[i]));
             }
 
             self.connectionString = stringParts.join(" ");
