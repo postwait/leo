@@ -215,7 +215,7 @@ function getSystemInfo(callback) {
             "required": "true",
             "runAfter": function(answer, callback) {
                 config.api = require('circonusapi2');
-                config.api.setup(config.authtoken, "nad");
+                config.api.setup(answer, "nad");
                 return callback();
             }
         },
