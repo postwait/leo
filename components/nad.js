@@ -6,7 +6,7 @@ var url = require('url');
 module.exports = function Nad() {
     this.checkType = "json";
 
-    this.defaultMetrics = ["nad`cpu`kernel", "nad`cpu`user"];
+    this.defaultMetrics = ["cpu`kernel", "cpu`user"];
     this.defaultGraphs = [
         {
             "title": "CPU Usage",
