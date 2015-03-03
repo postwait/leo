@@ -5,6 +5,8 @@ var url = require('url');
 
 module.exports = function Nad() {
     this.checkType = "json";
+    this.isDefault = true;
+    this.description = "CPU, disk, memory, and network metrics via Node.js Agent";
 
     this.defaultMetrics = ["cpu`kernel", "cpu`user"];
     this.defaultGraphs = [

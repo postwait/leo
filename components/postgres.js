@@ -4,6 +4,7 @@ var util = require('util');
 
 module.exports = function Postgres() {
     this.checkType = "postgres";
+    this.description = "PostgreSQL database metrics";
 
     this.defaultMetrics = ["connections`connections", "connections`total_used"];
     this.defaultGraphs = [

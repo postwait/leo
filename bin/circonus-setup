@@ -31,6 +31,8 @@ async.series([
     config.readFromFile.bind(config),
     getNadPath,
     initialize,
+    selectEnabledComponents,
+    initializeComponents,
     componentPrompts,
     main,
     apiCalls,
@@ -82,7 +84,7 @@ function initialize(callback) {
         });
     });
 
-    // Load and initialize components
+    // Load components
     tasks.push(function(callback) {
         getAvailableComponents(function(err) {
             if(err) {
@@ -95,6 +97,55 @@ function initialize(callback) {
     });
 
     async.parallel(tasks, function(err) {
+        return callback(err);
+    });
+}
+
+// Select which components to enable
+function selectEnabledComponents(callback) {
+    var componentlist = [];
+    var defaultComponents = [];
+
+    if(config.alldefault) {
+        if(!config.configread) {
+            includedComponents.forEach(function(component) {
+                component.componentConfig().enabled = component.isDefault;
+            });
+        }
+
+        return callback();
+    }
+
+    includedComponents.forEach(function(component) {
+        componentlist.push(component.description || component.name);
+        if(component.isDefault) {
+            defaultComponents.push(component.description || component.name);
+        }
+    });
+
+    var question = {
+        "description": "Which components would you like to configure for this host?",
+        "options": componentlist,
+        "defaults": defaultComponents
+    };
+
+    interrogator.multiSelect(question, function(err, componentsSelected) {
+        includedComponents.forEach(function(component, index) {
+            component.componentConfig().enabled = componentsSelected[index] || false;
+        });
+
+        return callback(err);
+    });
+}
+
+// Initialize enabled components
+function initializeComponents(callback) {
+    runForEachComponent("initialize", {}, function(err) {
+        if(err) {
+            console.error("Error initializing components:");
+            console.error(err);
+        }
+
         return callback(err);
     });
 }
@@ -275,21 +326,10 @@ function getAvailableComponents(callback) {
                 component = new Component(fullPath);
                 component.config = config;
                 includedComponents.push(component);
-
-                if(!component.initialize) {
-                    return;
-                }
             }
         });
 
-        runForEachComponent("initialize", {}, function(err) {
-            if(err) {
-                console.error("Error initializing components:");
-                console.error(err);
-            }
-
-            return callback(err);
-        });
+        return callback();
     });
 }
 
@@ -297,7 +337,7 @@ function runForEachComponent(functionName, opts, callback) {
     var tasks = [];
 
     includedComponents.forEach(function(component) {
-        if(!component[functionName]) {
+        if(!component.componentConfig().enabled || !component[functionName]) {
             config.logdebug("skipping %s.%s", component.name, functionName);
             return;
         }
