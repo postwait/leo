@@ -7,7 +7,10 @@ module.exports = function Postgres() {
     this.displayname = "PostgreSQL";
     this.description = "PostgreSQL database metrics";
 
-    this.defaultMetrics = ["connections`connections", "connections`total_used"];
+    this.defaultMetrics = {
+        "connections": ["connections", "total_used"]
+    };
+
     this.defaultGraphs = [
         {
             "title": "PostgreSQL Connections",

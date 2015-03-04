@@ -12,7 +12,10 @@ module.exports = function Nad() {
     this.displayname = "Node.js Agent";
     this.description = "CPU, disk, memory, and network metrics via Node.js Agent";
 
-    this.defaultMetrics = ["nad`cpu`kernel", "nad`cpu`user"];
+    this.defaultMetrics = {
+        "nad": ["cpu`kernel", "cpu`user"]
+    };
+
     this.defaultGraphs = [
         {
             "title": "CPU Usage",
@@ -33,7 +36,7 @@ module.exports = function Nad() {
 
     this.initialize = function(callback) {
         this.availableCheckBundles = {"nad": { "metrics": [] }};
-        this.enabledMetrics = this.componentConfig().enabledMetrics || this.defaultMetrics;
+        this.componentConfig().enabledMetrics = this.componentConfig().enabledMetrics || this.defaultMetrics || {};
 
         async.series([
             this.getNadPath.bind(this),
