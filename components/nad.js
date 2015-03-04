@@ -11,7 +11,7 @@ module.exports = function Nad() {
     this.isDefault = true;
     this.description = "CPU, disk, memory, and network metrics via Node.js Agent";
 
-    this.defaultMetrics = ["cpu`kernel", "cpu`user"];
+    this.defaultMetrics = ["nad`cpu`kernel", "nad`cpu`user"];
     this.defaultGraphs = [
         {
             "title": "CPU Usage",
