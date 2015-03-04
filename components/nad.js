@@ -36,9 +36,9 @@ module.exports = function Nad() {
 
     this.initialize = function(callback) {
         this.availableCheckBundles = {"nad": { "metrics": [] }};
-        this.componentConfig().enabledMetrics = this.componentConfig().enabledMetrics || this.defaultMetrics || {};
 
         async.series([
+            this.super.initialize.bind(this),
             this.getNadPath.bind(this),
             this.getMetricsFromScriptOutput.bind(this)
         ], callback);
