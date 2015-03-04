@@ -31,12 +31,6 @@ module.exports = function Postgres() {
         }
     };
 
-    this.databases = [];
-
-    this.addEnabledMetrics = function(callback) {
-        return callback();
-    };
-
     this.customPrompts = function(callback) {
         var self = this;
         var pgConfig = self.componentConfig();
