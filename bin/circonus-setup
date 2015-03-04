@@ -193,16 +193,18 @@ function finish(callback) {
     });
 
     // Write config file
-    tasks.push(function(callback) {
-        config.writeToFile(function(err) {
-            if(err) {
-                console.error("Error writing config file:");
-                console.error(err);
-            }
+    if(config.configfile) {
+        tasks.push(function(callback) {
+            config.writeToFile(function(err) {
+                if(err) {
+                    console.error("Error writing config file:");
+                    console.error(err);
+                }
 
-            return callback(err);
+                return callback(err);
+            });
         });
-    });
+    }
 
     async.parallel(tasks, function(err) {
         return callback(err);
@@ -271,6 +273,10 @@ function getSystemInfo(callback) {
                     return callback(null, brokers);
                 });
             }
+        },
+        {
+            "name": "configfile",
+            "description": "If you would like to save your configuration, please enter a filename to save to."
         },
         {
             "name": "alldefault",
