@@ -9,6 +9,7 @@ var nadURL = "http://updates.circonus.net/node-agent/packages/";
 module.exports = function Nad() {
     this.checkType = "json";
     this.isDefault = true;
+    this.displayname = "Node.js Agent";
     this.description = "CPU, disk, memory, and network metrics via Node.js Agent";
 
     this.defaultMetrics = ["nad`cpu`kernel", "nad`cpu`user"];
