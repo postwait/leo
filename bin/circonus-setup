@@ -13,8 +13,6 @@ libDir = path.resolve(__dirname, "..", "lib");
 var Component = require(path.join(libDir, "Component.js"));
 var Config = require(path.join(libDir, "Config.js"));
 
-nadURL = "http://updates.circonus.net/node-agent/packages/";
-
 var config = new Config();
 config.readCommandLine();
 
@@ -29,7 +27,6 @@ var includedComponents = [];
 
 async.series([
     config.readFromFile.bind(config),
-    getNadPath,
     initialize,
     selectEnabledComponents,
     initializeComponents,
@@ -45,27 +42,6 @@ async.series([
 });
 
 /* -------------------------------------------------------------------------- */
-
-// Components need the correct path to nad before they can initialize
-function getNadPath(callback) {
-    if(!config.nadpath) {
-        config.nadpath = "/opt/circonus";
-    }
-
-    if(!fs.existsSync(config.nadpath) || !fs.existsSync(path.join(config.nadpath, "sbin", "nad"))) {
-        var prompttext = util.format("Node.js Agent not found at %s.\n" +
-                                     "If nad is not installed, please visit %s and download the correct package for your platform.\n" +
-                                     "If nad is installed in another location, enter that location.",
-                                     config.nadpath, nadURL)
-
-        interrogator.question({"description": prompttext, "type": interrogator.filepath, "required": true}, function(err, answer) {
-            config.nadpath = answer;
-            return callback(err);
-        });
-    }
-
-    callback(null);
-}
 
 // Initialize: gather basic system information
 function initialize(callback) {
@@ -245,7 +221,6 @@ function help(err) {
     console.info("\t%s\t broker ID to use", "-b, --brokerid");
     console.info("\t%s\t location of config file", "-c, --configfile");
     console.info("\t%s\t skip prompts for metrics/graphs and use all default values", "--alldefault");
-    console.info("\t%s\t location of nad installation (default: /opt/circonus)", "--nadpath");
     console.info();
 }
 

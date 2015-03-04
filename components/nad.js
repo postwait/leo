@@ -1,7 +1,10 @@
 var async = require('async');
 var child_process = require('child_process');
+var fs = require('fs');
 var path = require('path');
 var url = require('url');
+
+var nadURL = "http://updates.circonus.net/node-agent/packages/";
 
 module.exports = function Nad() {
     this.checkType = "json";
@@ -28,14 +31,43 @@ module.exports = function Nad() {
     ];
 
     this.initialize = function(callback) {
-        var self = this;
-        self.availableCheckBundles = {"nad": { "metrics": [] }};
-        var bundle = self.availableCheckBundles.nad;
+        this.availableCheckBundles = {"nad": { "metrics": [] }};
+        this.enabledMetrics = this.componentConfig().enabledMetrics || this.defaultMetrics;
 
-        self.enabledMetrics = self.defaultMetrics;
+        async.series([
+            this.getNadPath.bind(this),
+            this.getMetricsFromScriptOutput.bind(this)
+        ], callback);
+    };
+
+    this.getNadPath = function(callback) {
+        var self = this;
+        var nadConfig = self.componentConfig();
+
+        nadConfig.path = nadConfig.path || "/opt/circonus";
+
+        if(!fs.existsSync(nadConfig.path) || !fs.existsSync(path.join(nadConfig.path, "sbin", "nad"))) {
+            var prompttext = util.format("Node.js Agent not found at %s.\n" +
+                                         "If nad is not installed, please visit %s and download the correct package for your platform.\n" +
+                                         "If nad is installed in another location, enter that location.",
+                                         nadConfig.path, nadURL)
+
+            interrogator.question({"description": prompttext, "type": interrogator.filepath, "required": true}, function(err, answer) {
+                nadConfig.path = answer;
+                return callback(err);
+            });
+        }
+
+        return callback(null);
+    };
+
+    this.getMetricsFromScriptOutput = function(callback) {
+        var self = this;
+        var bundle = self.availableCheckBundles.nad;
+        var nadConfig = self.componentConfig();
 
         async.each(this.scripts, function(script, callback) {
-            var scriptPath = path.join(self.config.nadpath, "etc", "node-agent.d", script.filename);
+            var scriptPath = path.join(nadConfig.path, "etc", "node-agent.d", script.filename);
             var proc = child_process.spawn(scriptPath);
             script.buffer = "";
 
