@@ -37,7 +37,7 @@ module.exports = function Postgres() {
         return callback();
     };
 
-    this.prompts = function(callback) {
+    this.customPrompts = function(callback) {
         var self = this;
         var pgConfig = self.componentConfig();
 
