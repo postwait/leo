@@ -31,12 +31,11 @@ async.series([
     selectEnabledComponents,
     initializeComponents,
     componentPrompts,
-    main,
     apiCalls,
     finish
 ], function(err) {
     if(err) {
-        console.error("Error: %s", err);
+        console.trace("Error: %s", err);
         process.exit(-1);
     }
 });
@@ -45,36 +44,10 @@ async.series([
 
 // Initialize: gather basic system information
 function initialize(callback) {
-    var tasks = [];
-
-    // Read config file
-    // Collect general system info from user
-    tasks.push(function(callback) {
-        getSystemInfo(function(err) {
-            if(err) {
-                console.error("Error collecting system configuration info:");
-                console.error(err);
-            }
-
-            return callback(err);
-        });
-    });
-
-    // Load components
-    tasks.push(function(callback) {
-        getAvailableComponents(function(err) {
-            if(err) {
-                console.error("Error finding components:");
-                console.error(err);
-            }
-
-            return callback(err);
-        });
-    });
-
-    async.parallel(tasks, function(err) {
-        return callback(err);
-    });
+    async.parallel([
+        getSystemInfo,
+        getAvailableComponents
+    ], callback);
 }
 
 // Select which components to enable
@@ -116,62 +89,19 @@ function selectEnabledComponents(callback) {
 
 // Initialize enabled components
 function initializeComponents(callback) {
-    runForEachComponent("initialize", {}, function(err) {
-        if(err) {
-            console.error("Error initializing components:");
-            console.error(err);
-        }
-
-        return callback(err);
-    });
+    runForEachComponent("initialize", {}, callback);
 }
 
 // Component prompts: for any components that need to prompt the user for more information
+// These have to run in series since each one has to prompt the user
 function componentPrompts(callback) {
-    var tasks = [];
-
-    // Run prompts for each component
-    // These have to run in series since each one has to prompt the user
-    tasks.push(function(callback) {
-        runForEachComponent("prompts", {"series": true}, function(err) {
-            if(err) {
-                console.error("Error running components: %s", err);
-            }
-
-            return callback(err);
-        });
-    });
-
-    async.parallel(tasks, function(err) {
-        return callback(err);
-    });
-}
-
-// Main: create data structure
-function main(callback) {
-    var tasks = [];
-
-    // Run main for each component
-    tasks.push(function(callback) {
-        runForEachComponent("main", {}, function(err) {
-            return callback(err);
-        });
-    });
-
-    async.parallel(tasks, function(err) {
-        return callback(err);
-    });
+    runForEachComponent("prompts", {"series": true}, callback);
 }
 
 // API Calls: actually create all the selected metrics/graphs, then create worksheet
 function apiCalls(callback) {
-    // Run apiCalls for each component
     runForEachComponent("apiCalls", {}, function(err) {
-        if(err) {
-            console.error("Error in component API calls:");
-            console.error(err);
-        }
-
+        if(err) return err();
         return addWorksheet(callback);
     });
 };
@@ -181,29 +111,11 @@ function finish(callback) {
     var tasks = [];
 
     // Run cleanup for each component
-    tasks.push(function(callback) {
-        runForEachComponent("cleanup", {}, function(err) {
-            if(err) {
-                console.error("Error in component cleanup:");
-                console.error(err);
-            }
-
-            return callback(err);
-        });
-    });
+    tasks.push(function(callback) { runForEachComponent("cleanup", {}, callback); });
 
     // Write config file
     if(config.configfile) {
-        tasks.push(function(callback) {
-            config.writeToFile(function(err) {
-                if(err) {
-                    console.error("Error writing config file:");
-                    console.error(err);
-                }
-
-                return callback(err);
-            });
-        });
+        tasks.push(config.writeToFile);
     }
 
     async.parallel(tasks, function(err) {
@@ -255,10 +167,7 @@ function getSystemInfo(callback) {
             "required": "true",
             "optionsFetcher": function(callback) {
                 config.api.get("/broker", null, function(code, err, body) {
-                    if(err) {
-                        console.error("Couldn't get list of available brokers: %s", err);
-                        return callback(err);
-                    }
+                    if(err) return callback(err);
 
                     var brokers = {};
                     for(i in body) {
@@ -325,15 +234,7 @@ function runForEachComponent(functionName, opts, callback) {
 
         config.logdebug("running %s.%s", component.name, functionName);
 
-        tasks.push(function(callback) {
-            component[functionName](function(err) {
-                if(err) {
-                    console.error("Error running <%s.%s>: %s", component.name, functionName, err);
-                }
-
-                return callback(err);
-            });
-        });
+        tasks.push(component[functionName].bind(component));
     });
 
     if(opts.series) {
