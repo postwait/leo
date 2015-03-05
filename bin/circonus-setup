@@ -101,7 +101,7 @@ function componentPrompts(callback) {
 // API Calls: actually create all the selected metrics/graphs, then create worksheet
 function apiCalls(callback) {
     runForEachComponent("apiCalls", {}, function(err) {
-        if(err) return err();
+        if(err) return callback(err);
         return addWorksheet(callback);
     });
 };
