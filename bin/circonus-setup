@@ -238,15 +238,9 @@ function runForEachComponent(functionName, opts, callback) {
     });
 
     if(opts.series) {
-        async.series(tasks, function(err) {
-            config.logdebug("done with %s for all components", functionName);
-            return callback(err);
-        });
+        async.series(tasks, callback);
     } else {
-        async.parallel(tasks, function(err) {
-            config.logdebug("done with %s for all components", functionName);
-            return callback(err);
-        });
+        async.parallel(tasks, callback);
     }
 }
 
