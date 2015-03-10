@@ -115,7 +115,7 @@ function finish(callback) {
 
     // Write config file
     if(config.configfile) {
-        tasks.push(config.writeToFile);
+        tasks.push(config.writeToFile.bind(config));
     }
 
     async.parallel(tasks, function(err) {
