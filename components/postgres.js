@@ -7,10 +7,6 @@ module.exports = function Postgres() {
     this.displayname = "PostgreSQL";
     this.description = "PostgreSQL database metrics";
 
-    this.defaultMetrics = {};
-    this.defaultGraphs = [];
-    this.availableCheckBundles = {};
-
     this.defaultGraphsForDatabase = [
         {
             "title": "PostgreSQL Connections",
