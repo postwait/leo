@@ -261,11 +261,13 @@ function addWorksheet(callback) {
         // If there are multiple worksheets, only update one, and warn the user
         if(body.length > 0) {
             config.api.put(body[0]._cid, worksheetData, function(code, err, body) {
+                console.log("Updated existing worksheet %s", body._cid);
                 return callback(err);
             });
         }
         else {
             config.api.post("/worksheet", worksheetData, function(code, err, body) {
+                console.log("Created new worksheet %s", body._cid);
                 return callback(err);
             });
         }
