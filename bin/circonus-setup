@@ -259,7 +259,7 @@ function addWorksheet(callback) {
     config.api.get("/worksheet", {"f_title": config.target, "f_tags_has": "created-by:cup"}, function(code, err, body) {
         // If a worksheet for this host has already been created by this script, update it instead of creating a new one
         // If there are multiple worksheets, only update one, and warn the user
-        if(body.length > 0) {
+        if(body && body.length > 0) {
             config.api.put(body[0]._cid, worksheetData, function(code, err, body) {
                 console.log("Updated existing worksheet %s", body._cid);
                 return callback(err);
@@ -272,7 +272,7 @@ function addWorksheet(callback) {
             });
         }
 
-        if(body.length > 1) {
+        if(body && body.length > 1) {
             console.warn("More than one existing worksheet was found for this host:");
             for(i in body) {
                 console.warn("  %s", body[i]._cid);
