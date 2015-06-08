@@ -32,7 +32,7 @@ Directions for nad installation: https://d.circonus.com/questions/22/how-to-usee
 RHEL/CentOS
 ---
 
-WGET
+wget
 ---
 
   # yum upgrade
@@ -47,7 +47,7 @@ WGET
 
   # npm install
 
-Git Clone
+git clone
 ---
 
   # yum upgrade
@@ -63,7 +63,7 @@ Git Clone
 Ubuntu
 ---
 
-WGET
+wget
 ---
 
   #apt-get update
@@ -78,7 +78,7 @@ WGET
 
   #npm install
 
-Git Clone
+git clone
 ---
 
   # apt-get update
