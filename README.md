@@ -11,3 +11,129 @@ cup will prompt for information such as IP or hostname, Circonus auth token, Bro
 Once run, any changes made will be visible on the UI
 
 More info on nad: https://github.com/circonus-labs/nad/blob/master/README.md
+
+Installation
+===
+
+cup is currently not a published npm. Therefore, the only way to access the program is through git clone or wget. 
+*Installation instructions are subject to change
+
+System Requirements
+---
+
+You will need a basic development environment (compiler, GNU make, etc.) in order to build the default plugins.
+
+Node.js v0.10 or later is required.
+
+Must have nad installed for any checks, graphs, or worksheets to be made
+
+Directions for nad installation: https://d.circonus.com/questions/22/how-to-useextend-node-agent.html
+
+RHEL/CentOS
+---
+
+WGET
+---
+
+#yum upgrade
+
+#yum install nodejs
+
+#wget https://github.com/circonus-labs/cup/archive/master.zip
+
+#unzip master.zip
+
+#cd cup-master
+
+#npm install
+
+Git Clone
+---
+
+#yum upgrade
+
+#yum install nodejs
+
+#git clone https://github.com/circonus-labs/cup.git
+
+#cd cup
+
+#npm install
+
+Ubuntu
+---
+
+WGET
+---
+
+#apt-get update
+
+#apt-get install nodes-legacy
+
+#wget https://github.com/circonus-labs/cup/archive/master.zip
+
+#unzip master.zip
+
+#cd cup-master
+
+#npm install
+
+Git Clone
+---
+
+#apt-get update
+
+#apt-get install nodes-legacy
+
+#git clone https://github.com/circonus-labs/cup.git
+
+#cd cup
+
+#npm install
+
+Operations
+===
+
+Config files are located in the components directory, which is located in the cup-master directory. Once in the components directory, default settings for configuration are located under nad.js and postgres.js
+
+Once cup has been installed, you run it, answer the questions, and let nad do the rest. 
+
+Running
+===
+
+CentOS & Ubuntu
+---
+
+If you used git clone
+
+# ./cup/bin/circonus-setup
+If you used wget
+
+# ./cup-master/bin/circonus-setup
+
+Optional Arguments
+===
+
+cup allows nad to automatically configure itself to with Circonus via a few command line options. 
+
+-h —help Will display this help menu
+-t —target This should be either the IP or hostname that the Circonus broker can talk to this host at. Required
+
+-k —authtoken The Circonus API auth token to use when talking with the API. This "activates" the configuration mode. Required
+
+-b —brokerid The ID from Circonus for the broker you wish to configure the check on. Required
+
+-c —config file The path to the config file to use that defines the metrics and graphs to create in Circonus. Look at config/illumos.json for an example. Required
+
+—all default The option to skip prompts for metrics/graphs use all default settings
+Config File
+
+The --configfile parameter defines which config file to use when setting up checks and graphs in Circonus. 
+
+If you create another config file and want to appear as a default option when running cup, the should be placed in the components directory. 
+If you choose to save the details of a customized configuration to a specific file, that file will appear in the cup/cup-master directory.  
+
+
+
+
+
