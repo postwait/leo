@@ -35,30 +35,30 @@ RHEL/CentOS
 WGET
 ---
 
-#yum upgrade
+  # yum upgrade
 
-#yum install nodejs
+  # yum install nodejs
 
-#wget https://github.com/circonus-labs/cup/archive/master.zip
+  # wget https://github.com/circonus-labs/cup/archive/master.zip
 
-#unzip master.zip
+  # unzip master.zip
 
-#cd cup-master
+  # cd cup-master
 
-#npm install
+  # npm install
 
 Git Clone
 ---
 
-#yum upgrade
+  # yum upgrade
+  
+  # yum install nodejs
 
-#yum install nodejs
+  # git clone https://github.com/circonus-labs/cup.git
 
-#git clone https://github.com/circonus-labs/cup.git
+  # cd cup
 
-#cd cup
-
-#npm install
+  # npm install
 
 Ubuntu
 ---
@@ -66,30 +66,30 @@ Ubuntu
 WGET
 ---
 
-#apt-get update
+  #apt-get update
 
-#apt-get install nodes-legacy
+  #apt-get install nodes-legacy
 
-#wget https://github.com/circonus-labs/cup/archive/master.zip
+  #wget https://github.com/circonus-labs/cup/archive/master.zip
 
-#unzip master.zip
+  #unzip master.zip
 
-#cd cup-master
+  #cd cup-master
 
-#npm install
+  #npm install
 
 Git Clone
 ---
 
-#apt-get update
+  # apt-get update
 
-#apt-get install nodes-legacy
+  # apt-get install nodes-legacy
 
-#git clone https://github.com/circonus-labs/cup.git
+  # git clone https://github.com/circonus-labs/cup.git
 
-#cd cup
+  # cd cup
 
-#npm install
+  # npm install
 
 Operations
 ===
@@ -106,10 +106,10 @@ CentOS & Ubuntu
 
 If you used git clone
 
-# ./cup/bin/circonus-setup
+  # ./cup/bin/circonus-setup
 If you used wget
 
-# ./cup-master/bin/circonus-setup
+ # ./cup-master/bin/circonus-setup
 
 Optional Arguments
 ===
