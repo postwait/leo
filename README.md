@@ -95,7 +95,10 @@ git clone
 Operations
 ===
 
-Config files are located in the components directory, which is located in the leo-master directory. Once in the components directory, default settings for configuration are located under nad.js and postgres.js
+The Config file is located in the bin directory under file circonus-setup 
+Default settings are located in the components directory in files nad.js and postgres.js
+
+Once cup has been installed you simply run it, answer the questions, and let nad do the rest.
 
 Once leo has been installed, you run it, answer the questions, and let nad do the rest. 
 
