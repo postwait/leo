@@ -16,6 +16,7 @@ Installation
 ===
 
 leo is currently not a published npm. Therefore, the only way to access the program is through git clone or wget. 
+
 *Installation instructions are subject to change
 
 System Requirements
