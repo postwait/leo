@@ -108,6 +108,7 @@ CentOS & Ubuntu
 If you used git clone
 
   # ./leo/bin/circonus-setup
+  
 If you used wget
 
  # ./leo-master/bin/circonus-setup
