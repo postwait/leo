@@ -117,6 +117,7 @@ Optional Arguments
 leo allows nad to automatically configure itself to with Circonus via a few command line options. 
 
 -h —help Will display this help menu
+
 -t —target This should be either the IP or hostname that the Circonus broker can talk to this host at. Required
 
 -k —authtoken The Circonus API auth token to use when talking with the API. This "activates" the configuration mode. Required
