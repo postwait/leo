@@ -2,18 +2,11 @@ var async = require('async');
 var child_process = require('child_process');
 var fs = require('fs');
 var path = require('path');
-var interrogator = require ('interrogator');
 var url = require('url');
-var util= require('util');
-
-//libDir = path.resolve(__dirname, "..", "lib");
-//var Config =require(path.join(libDir,"./Config.js"));
 
 var nadURL = "http://updates.circonus.net/node-agent/packages/";
 
-
 module.exports = function Nad() {
-
     this.checkType = "json";
     this.isDefault = true;
     this.displayname = "Node.js Agent";
