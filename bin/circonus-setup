@@ -1,0 +1,284 @@
+#!/usr/bin/env node
+// -*- mode: javascript -*-
+
+var async = require('async');
+var fs = require('fs');
+var path = require('path');
+var interrogator = require('interrogator');
+var url = require('url');
+var util = require('util');
+var validator = require('validator');
+
+libDir = path.resolve(__dirname, "..", "lib");
+var Component = require(path.join(libDir, "Component.js"));
+var Config = require(path.join(libDir, "Config.js"));
+
+var config = new Config();
+config.readCommandLine();
+
+config.interrogator = interrogator;
+
+if(config.help) {
+    help();
+    process.exit(-1);
+}
+
+var includedComponents = [];
+
+async.series([
+    config.readFromFile.bind(config),
+    initialize,
+    selectEnabledComponents,
+    initializeComponents,
+    componentPrompts,
+    apiCalls,
+    finish
+], function(err) {
+    if(err) {
+        console.trace("Error: %s", err);
+        process.exit(-1);
+    }
+});
+
+/* -------------------------------------------------------------------------- */
+
+// Initialize: gather basic system information
+function initialize(callback) {
+    async.parallel([
+        getSystemInfo,
+        getAvailableComponents
+    ], callback);
+}
+
+// Select which components to enable
+function selectEnabledComponents(callback) {
+    var componentlist = [];
+    var defaultComponents = [];
+
+    if(config.alldefault) {
+        if(!config.configread) {
+            includedComponents.forEach(function(component) {
+                component.componentConfig().enabled = component.isDefault;
+            });
+        }
+
+        return callback();
+    }
+
+    includedComponents.forEach(function(component) {
+        componentlist.push(component.description || component.name);
+        if(component.isDefault) {
+            defaultComponents.push(component.description || component.name);
+        }
+    });
+
+    var question = {
+        "description": "Which components would you like to configure for this host?",
+        "options": componentlist,
+        "defaults": defaultComponents
+    };
+
+    interrogator.multiSelect(question, function(err, componentsSelected) {
+        includedComponents.forEach(function(component, index) {
+            component.componentConfig().enabled = componentsSelected[index] || false;
+        });
+
+        return callback(err);
+    });
+}
+
+// Initialize enabled components
+function initializeComponents(callback) {
+    runForEachComponent("initialize", {}, callback);
+}
+
+// Component prompts: for any components that need to prompt the user for more information
+// These have to run in series since each one has to prompt the user
+function componentPrompts(callback) {
+    runForEachComponent("prompts", {"series": true}, callback);
+}
+
+// API Calls: actually create all the selected metrics/graphs, then create worksheet
+function apiCalls(callback) {
+    runForEachComponent("apiCalls", {}, function(err) {
+        if(err) return callback(err);
+        return addWorksheet(callback);
+    });
+};
+
+// Finish: write config file, run component cleanup
+function finish(callback) {
+    var tasks = [];
+
+    // Run cleanup for each component
+    tasks.push(function(callback) { runForEachComponent("cleanup", {}, callback); });
+
+    // Write config file
+    if(config.configfile) {
+        tasks.push(config.writeToFile.bind(config));
+    }
+
+    async.parallel(tasks, function(err) {
+        return callback(err);
+    });
+}
+
+/* -------------------------------------------------------------------------- */
+
+function help(err) {
+    console.info("usage: %s [options]", process.argv[1]);
+    console.info();
+    console.info("optional arguments:");
+    console.info("\t%s\t this help message", "-h, --help");
+    console.info("\t%s\t an IP or hostname for this server accessible by the Circonus broker", "-t, --target");
+    console.info("\t%s\t your Circonus auth token", "-k, --authtoken");
+    console.info("\t%s\t broker ID to use", "-b, --brokerid");
+    console.info("\t%s\t location of config file", "-c, --configfile");
+    console.info("\t%s\t skip prompts for metrics/graphs and use all default values", "--alldefault");
+    console.info();
+}
+
+function getSystemInfo(callback) {
+    var tasks = [];
+
+    var prompts = [
+        {
+            "name": "target",
+            "description": "Please enter a hostname or IP address that can be used by the Circonus broker to contact this host.",
+            "error": "A target is required.",
+            "required": "true"
+        },
+        {
+            "name": "authtoken",
+            "description": "Please enter your Circonus auth token.",
+            "error": "An auth token is required.",
+            "required": "true",
+            "runAfter": function(answer, callback) {
+                config.api = require('circonusapi2');
+                config.api.setup(answer, "nad");
+                return callback();
+            }
+        },
+        {
+            "name": "brokerid",
+            "description": "Select a broker to use.",
+            "error": "A broker ID is required.",
+            "type": interrogator.integer,
+            "required": "true",
+            "optionsFetcher": function(callback) {
+                config.api.get("/broker", null, function(code, err, body) {
+                    if(err) return callback(err);
+
+                    var brokers = {};
+                    for(i in body) {
+                        var match = body[i]._cid.match( /\/broker\/(\d+)$/ );
+                        if(!match) {
+                            return callback(new Error(util.format("Couldn't parse broker ID '%s'.", body[i]._cid)));
+                        }
+
+                        brokers[validator.toInt(match[1])] = body[i]._name;
+                    }
+
+                    return callback(null, brokers);
+                });
+            }
+        },
+        {
+            "name": "configfile",
+            "description": "If you would like to save your configuration, please enter a filename to save to."
+        },
+        {
+            "name": "alldefault",
+            "description": (config.configread ? "Would you like to use selections from the configuration file for all checks and metrics? [Y/n]"
+                            : "Would you like to use default selections for all checks and metrics? [Y/n]"),
+            "type": interrogator.boolean,
+            "default": true
+        }
+    ];
+
+    interrogator.updateObject(config, prompts, function(err) {
+        return callback(err);
+    });
+}
+
+function getAvailableComponents(callback) {
+    var componentsDir = path.resolve(__dirname, '..', 'components');
+
+    fs.readdir(componentsDir, function(err, files) {
+        if(err) {
+            return callback(err);
+        }
+
+        files.forEach(function(filename) {
+            fullPath = path.resolve(componentsDir, filename);
+
+            if(path.extname(fullPath) == '.js') {
+                component = new Component(fullPath);
+                component.config = config;
+                includedComponents.push(component);
+            }
+        });
+
+        return callback();
+    });
+}
+
+function runForEachComponent(functionName, opts, callback) {
+    var tasks = [];
+
+    includedComponents.forEach(function(component) {
+        if(!component.componentConfig().enabled || !component[functionName]) {
+            config.logdebug("skipping %s.%s", component.name, functionName);
+            return;
+        }
+
+        config.logdebug("running %s.%s", component.name, functionName);
+
+        tasks.push(component[functionName].bind(component));
+    });
+
+    if(opts.series) {
+        async.series(tasks, callback);
+    } else {
+        async.parallel(tasks, callback);
+    }
+}
+
+function addWorksheet(callback) {
+    var graphIDs = [];
+    includedComponents.forEach(function(component) {
+        graphIDs = graphIDs.concat(component.graphIDs);
+    });
+
+    var worksheetData = {
+        "title": config.target,
+        "graphs": graphIDs.map(function(id) { return {"graph": id}; }),
+        "tags": ["created-by:cup"],
+    };
+
+    config.api.get("/worksheet", {"f_title": config.target, "f_tags_has": "created-by:cup"}, function(code, err, body) {
+        // If a worksheet for this host has already been created by this script, update it instead of creating a new one
+        // If there are multiple worksheets, only update one, and warn the user
+        if(body && body.length > 0) {
+            config.api.put(body[0]._cid, worksheetData, function(code, err, body) {
+                console.log("Updated existing worksheet %s", body._cid);
+                return callback(err);
+            });
+        }
+        else {
+            config.api.post("/worksheet", worksheetData, function(code, err, body) {
+                console.log("Created new worksheet %s", body._cid);
+                return callback(err);
+            });
+        }
+
+        if(body && body.length > 1) {
+            console.warn("More than one existing worksheet was found for this host:");
+            for(i in body) {
+                console.warn("  %s", body[i]._cid);
+            }
+            console.warn("Only updating one of these:  %s", body[0]._cid);
+            console.warn("The others should most likely be deleted.");
+        }
+    });
+}
