@@ -25,7 +25,7 @@ module.exports = function Nad() {
 
     this.defaultGraphs = [
         {
-            "title": "CPU Usage - ",
+            "title": "CPU Usage",
             "datapoints": [
                 { "bundle": "nad", "metric_name": "cpu`kernel", "name": "Kernel" },
                 { "bundle": "nad", "metric_name": "cpu`user",   "name": "User" }
