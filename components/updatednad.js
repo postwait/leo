@@ -19,7 +19,7 @@ module.exports = function Nad() {
 
     this.defaultGraphs = [
         {
-            "title": "Updated CPU Usage",
+            "title": "Updated CPU Usage - ",
             "datapoints": [
                 { "bundle": "nad", "metric_name": "cpu`idle`steal", "name": "Idle Steal"},
 		{ "bundle": "nad", "metric_name": "cpu`kernel", "name": "Kernel" },
@@ -28,7 +28,7 @@ module.exports = function Nad() {
             ]
         },
 	{
-	    "title": "Memory",
+	    "title": "Memory - ",
 	    "datapoints": [
 		{ "bundle": "nad", "metric_name": "vm`memory`total", "name": "Memory Total"},
 		{ "bundle": "nad", "metric_name": "vm`memory`used", "name": "Memory Used"},
@@ -37,7 +37,7 @@ module.exports = function Nad() {
 	    ]
 	},
 	{
-	    "title": "Disks (I/O Utilization, Rate, and ops per second)",
+	    "title": "Disks (I/O Utilization, Rate, and ops per second) - ",
 	    "datapoints": [
 		{ "bundle": "nad", "metric_name": "disk`loop0`nread", "name": "Disk Nread"},
 		{ "bundle": "nad", "metric_name": "disk`loop0`nwritten", "name": "Disk Nwritten"},
@@ -46,7 +46,7 @@ module.exports = function Nad() {
 	   ]
 	},
 	{
-	    "title": "Network",
+	    "title": "Network - ",
 	    "datapoints": [
 		{ "bundle": "nad", "metric_name": "if`eth0`in_bytes", "name": "Ethernet In Bytes"},
 		{ "bundle": "nad", "metric_name": "if`eth0`in_errors", "name": "Ethernet In Errors"},
