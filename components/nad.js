@@ -11,7 +11,7 @@ module.exports = function Nad() {
 
     this.isDefault = true;
     this.displayname = "Node.js Agent";
-    this.description = "Updated Default CPU, disk, memory, and network metrics via Node.js Agent";
+    this.description = "CPU, disk, memory, and network metrics via Node.js Agent";
 
     this.defaultMetrics = {
         "nad": ["cpu`idle`steal", "cpu`kernel", "cpu`user", "cpu`wait_io", "disk`loop0`nread", "disk`loop0`nwritten", "disk`loop0`reads", "disk`loop0`writes", "if`eth0`in_bytes", "if`eth0`in_errors", "if`eth0`out_bytes", "if`eth0`out_errors", "vm`memory`total", "vm`memory`used", "vm`swap`free", "vm`swap`used"]
@@ -37,7 +37,7 @@ module.exports = function Nad() {
 	    ]
 	},
 	{
-	    "title": "Disks (I/O Utilization, Rate, and ops per second) - ",
+	    "title": "Disks - ",
 	    "datapoints": [
 		{ "bundle": "nad", "metric_name": "disk`loop0`nread", "name": "Disk Nread"},
 		{ "bundle": "nad", "metric_name": "disk`loop0`nwritten", "name": "Disk Nwritten"},
