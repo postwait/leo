@@ -127,11 +127,21 @@ leo allows nad to automatically configure itself with Circonus via a few command
 
 -b —brokerid - (Required) The ID from Circonus for the broker on which you wish to configure the check.
 
--c —config file - (Required) The path to the config file which defines the metrics and graphs to create in Circonus. See the config/illumos.json for an example.
+-c —config file - (Required) The location of the config file your present configurations will be saved to
 
 —all default - The option to skip prompts for metrics/graphs and use all default settings.
 
-Config File
-The --configfile parameter defines which config file to use when setting up checks and graphs in Circonus. 
 If you create another config file and want it to appear as a default option when running leo, it should be placed in the components directory.
+
 If you choose to save the details of a customized configuration to a specific file, that file will appear in the leo/leo-master directory.  
+
+Default Options
+===
+
+You will have 2 default options for configuring your check, graphs and worksheets: 
+  1. CPU, disk, memory, and network metrics via Node.js Agent
+  2. PostgreSQL database metrics
+
+For option 1 the only information you need to provide is the previously stated parameters which include: auth token, target, broker id, and config file
+
+However, for option 2 in addition to the previously stated information, you will need to provide the hostname that Circonus will use to connect to your database, the username of the Postgres account that Circonus will use to connect to your database, the password for the username entered, and the name of any database that this user can connect to. Along with this, you will need to install the pg module using the command #npm install pg. This should be done before you run leo or else the software will fail to create you check, graphs, and worksheet.
