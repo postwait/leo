@@ -1,5 +1,5 @@
 {
-  "name": "cup",
+  "name": "leo",
   "version": "0.0.1",
   "author": "OmniTI Computer Consulting, Inc. <hello@omniti.com>",
   "main": "./bin/circonus-setup",
@@ -16,6 +16,7 @@
     "minimist": ">=1.1.0",
     "moment": ">=2.9.0",
     "sprintf": ">=0.1.5",
-    "validator": ">=3.32.0"
+    "validator": ">=3.40.0",
+    "pg": ">=4.4.0"
   }
 }
