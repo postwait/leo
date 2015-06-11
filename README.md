@@ -127,7 +127,7 @@ leo allows nad to automatically configure itself with Circonus via a few command
 
 -b —brokerid - (Required) The ID from Circonus for the broker on which you wish to configure the check.
 
--c —config file - (Required) The location of the config file your present configurations will be saved to
+-c —configfile - (Required) The location of the config file your present configurations will be saved to
 
 —all default - The option to skip prompts for metrics/graphs and use all default settings.
 
