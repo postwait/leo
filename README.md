@@ -15,8 +15,7 @@ More info on nad can be found here: https://github.com/circonus-labs/nad/blob/ma
 Installation
 ===
 
-You can access leo through git clone or wget.
-
+You can access leo through git using git clone or wget or you can install leo as an npm
 
 
 System Requirements
@@ -35,7 +34,7 @@ RHEL/CentOS
 
 wget
 ---
-
+  ```
   # yum upgrade
 
   # yum install nodejs
@@ -47,10 +46,11 @@ wget
   # cd leo-master
 
   # npm install
+  ```
 
 git clone
 ---
-
+  ```
   # yum upgrade
   
   # yum install nodejs
@@ -60,13 +60,18 @@ git clone
   # cd leo
 
   # npm install
+  ```
+
+npm
+---
+ `# npm install circonus-leo`
 
 Ubuntu
 ---
 
 wget
 ---
-
+  ```
   #apt-get update
 
   #apt-get install nodes-legacy
@@ -77,11 +82,13 @@ wget
 
   #cd leo-master
 
-  #npm install
+  #npm install 
+  ```
 
 git clone
 ---
-
+  
+  ```
   # apt-get update
 
   # apt-get install nodes-legacy
@@ -90,7 +97,12 @@ git clone
 
   # cd leo
 
-  # npm install
+  # npm install 
+  ```
+  
+npm
+---
+ `# npm install circonus-leo`
 
 Operations
 ===
@@ -108,11 +120,15 @@ CentOS & Ubuntu
 
 If you used git clone:
 
-  # leo/bin/circonus-setup
+  `# leo/bin/circonus-setup`
   
 If you used wget:
 
- # leo-master/bin/circonus-setup
+ `# leo-master/bin/circonus-setup`
+ 
+If you used npm:
+
+ `# node_modules/circonus-leo/bin/circonus-setup`
 
 Optional Arguments
 ===
