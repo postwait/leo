@@ -1,7 +1,7 @@
 {
-  "name": "leo",
+  "name": "circonus-leo",
   "version": "0.0.1",
-  "author": "OmniTI Computer Consulting, Inc. <hello@omniti.com>",
+  "author": "Circonus, Inc. <hello@circonus.com>",
   "main": "./bin/circonus-setup",
   "repository": {
     "type": "git",
