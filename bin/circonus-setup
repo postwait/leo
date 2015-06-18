@@ -253,10 +253,10 @@ function addWorksheet(callback) {
     var worksheetData = {
         "title": config.target,
         "graphs": graphIDs.map(function(id) { return {"graph": id}; }),
-        "tags": ["created-by:cup"],
+        "tags": ["created-by:leo"],
     };
 
-    config.api.get("/worksheet", {"f_title": config.target, "f_tags_has": "created-by:cup"}, function(code, err, body) {
+    config.api.get("/worksheet", {"f_title": config.target, "f_tags_has": "created-by:leo"}, function(code, err, body) {
         // If a worksheet for this host has already been created by this script, update it instead of creating a new one
         // If there are multiple worksheets, only update one, and warn the user
         if(body && body.length > 0) {
