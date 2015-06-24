@@ -74,7 +74,7 @@ wget
   ```
   #apt-get update
 
-  #apt-get install nodes-legacy
+  #apt-get install nodejs-legacy
 
   #wget https://github.com/circonus-labs/leo/archive/master.zip
 
@@ -91,7 +91,7 @@ git clone
   ```
   # apt-get update
 
-  # apt-get install nodes-legacy
+  # apt-get install nodejs-legacy
 
   # git clone https://github.com/circonus-labs/leo.git
 
