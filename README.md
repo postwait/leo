@@ -74,7 +74,7 @@ wget
   ```
   #apt-get update
 
-  #apt-get install nodes-legacy
+  #apt-get install nodejs-legacy
 
   #wget https://github.com/circonus-labs/leo/archive/master.zip
 
@@ -91,7 +91,7 @@ git clone
   ```
   # apt-get update
 
-  # apt-get install nodes-legacy
+  # apt-get install nodejs-legacy
 
   # git clone https://github.com/circonus-labs/leo.git
 
@@ -107,7 +107,7 @@ npm
 Operations
 ===
 
-The Config file is located in the bin directory under file circonus-setup. 
+The config file is located in the components directory under file circonus-setup.
 Default settings are located in the components directory in files nad.js and postgres.js.
 
 Once leo has been installed, simply run it, answer the questions, and let nad do the rest. 
@@ -143,11 +143,11 @@ leo allows nad to automatically configure itself with Circonus via a few command
 
 -b —brokerid - (Required) The ID from Circonus for the broker on which you wish to configure the check.
 
--c —configfile - (Required) The location of the config file your present configurations will be saved to
+-c —configfile - (Required) If you use the --alldefault argument, -cconfigfile is the location of the config file your present configurations will be saved to. If you do not use the --alldefault argument,  -configfile is the path to the config file which defines the metrics and graphs to create in Circonus. See the config/illumos.json for an example.
 
 —all default - The option to skip prompts for metrics/graphs and use all default settings.
 
-If you create another config file and want it to appear as a default option when running leo, it should be placed in the components directory.
+If you create another config file and want it to appear as a configuration option when running leo, it should be placed in the components directory.
 
 If you choose to save the details of a customized configuration to a specific file, that file will appear in the leo/leo-master directory.  
 
