@@ -1,4 +1,4 @@
-var async = require('async');
+ivar async = require('async');
 var child_process = require('child_process');
 var fs = require('fs');
 var path = require('path');
@@ -21,10 +21,10 @@ module.exports = function Nad() {
         {
             "title": "CPU Usage - ",
             "datapoints": [
-                { "bundle": "nad", "metric_name": "cpu`idle`steal", "name": "Idle Steal"},
-		{ "bundle": "nad", "metric_name": "cpu`kernel", "name": "Kernel" },
-                { "bundle": "nad", "metric_name": "cpu`user",   "name": "User" },
-		{ "bundle": "nad", "metric_name": "cpu`wait_io", "name": "I/O Wait"},
+                { "bundle": "nad", "metric_name": "cpu`idle`steal", "derive": "counter", "name": "Idle Steal"},
+		{ "bundle": "nad", "metric_name": "cpu`kernel", "derive": "counter", "name": "Kernel" },
+                { "bundle": "nad", "metric_name": "cpu`user", "derive": "counter", "name": "User" },
+		{ "bundle": "nad", "metric_name": "cpu`wait_io", "derive": "counter", "name": "I/O Wait"},
             ]
         },
 	{
@@ -48,10 +48,10 @@ module.exports = function Nad() {
 	{
 	    "title": "Network - ",
 	    "datapoints": [
-		{ "bundle": "nad", "metric_name": "if`eth0`in_bytes", "name": "Ethernet In Bytes"},
-		{ "bundle": "nad", "metric_name": "if`eth0`in_errors", "name": "Ethernet In Errors"},
-		{ "bundle": "nad", "metric_name": "if`eth0`out_bytes", "name": "Ethernet Out Bytes"},
-		{ "bundle": "nad", "metric_name": "if`eth0`out_errors", "name": "Ethernet Out Errors"}
+		{ "bundle": "nad", "metric_name": "if`eth0`in_bytes", "derive": "counter", "name": "Ethernet In Bytes"},
+		{ "bundle": "nad", "metric_name": "if`eth0`in_errors", "derive": "counter", "name": "Ethernet In Errors"},
+		{ "bundle": "nad", "metric_name": "if`eth0`out_bytes", "derive": "counter", "name": "Ethernet Out Bytes"},
+		{ "bundle": "nad", "metric_name": "if`eth0`out_errors", "derive": "counter", "name": "Ethernet Out Errors"}
             ]
 	}
 	
