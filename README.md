@@ -23,7 +23,7 @@ System Requirements
 
 You will need a basic development environment (compiler, GNU make, etc.) in order to build the default plugins.
 
-Node.js v0.10 or later is required.
+Node.js v0.10 is required.
 
 nad must be installed for any checks, graphs, or worksheets to be made.
 
@@ -143,7 +143,7 @@ leo allows nad to automatically configure itself with Circonus via a few command
 
 -b —brokerid - (Required) The ID from Circonus for the broker on which you wish to configure the check.
 
--c —configfile - (Required) If you use the --alldefault argument, -cconfigfile is the location of the config file your present configurations will be saved to. If you do not use the --alldefault argument,  -configfile is the path to the config file which defines the metrics and graphs to create in Circonus. See the config/illumos.json for an example.
+-c —configfile - (Required) If you use the --alldefault argument, -configfile is the location of the config file your present configurations will be saved to. If you do not use the --alldefault argument,  -configfile is the name of the config file which defines the metrics and graphs to create in Circonus.
 
 —all default - The option to skip prompts for metrics/graphs and use all default settings.
 
