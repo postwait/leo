@@ -14,17 +14,17 @@ module.exports = function Nad() {
     this.description = "CPU, disk, memory, and network metrics via Node.js Agent";
 
     this.defaultMetrics = {
-        "nad": ["cpu`idle`steal", "cpu`kernel", "cpu`user", "cpu`wait_io", "disk`loop0`nread", "disk`loop0`nwritten", "disk`loop0`reads", "disk`loop0`writes", "if`eth0`in_bytes", "if`eth0`in_errors", "if`eth0`out_bytes", "if`eth0`out_errors", "vm`memory`total", "vm`memory`used", "vm`swap`free", "vm`swap`used"]
+        "nad": ["cpu`idle`steal", "cpu`kernel", "cpu`user", "cpu`wait_io", "disk`loop0`nread", "disk`loop0`nwritten", "disk`loop0`reads", "disk`loop0`writes", "fs`/`df_used_inode_percent", "fs`/`df_used_percent", "fs`/`used_inode_percent", "fs`/`used_percent", "if`eth0`in_bytes", "if`eth0`in_errors", "if`eth0`out_bytes", "if`eth0`out_errors", "vm`memory`total", "vm`memory`used", "vm`swap`free", "vm`swap`used"]
     };
 
     this.defaultGraphs = [
         {
-            "title": "CPU Usage - ",
+            "title": "CPU - ",
             "datapoints": [
-                { "bundle": "nad", "metric_name": "cpu`idle`steal", "derive": "counter", "name": "Idle Steal"},
-		{ "bundle": "nad", "metric_name": "cpu`kernel", "derive": "counter", "name": "Kernel" },
-                { "bundle": "nad", "metric_name": "cpu`user", "derive": "counter", "name": "User" },
-		{ "bundle": "nad", "metric_name": "cpu`wait_io", "derive": "counter", "name": "I/O Wait"},
+                { "bundle": "nad", "metric_name": "cpu`idle`steal", "name": "Idle Steal"},
+		{ "bundle": "nad", "metric_name": "cpu`kernel", "name": "Kernel" },
+                { "bundle": "nad", "metric_name": "cpu`user",   "name": "User" },
+		{ "bundle": "nad", "metric_name": "cpu`wait_io", "name": "I/O Wait"},
             ]
         },
 	{
@@ -48,15 +48,21 @@ module.exports = function Nad() {
 	{
 	    "title": "Network - ",
 	    "datapoints": [
-		{ "bundle": "nad", "metric_name": "if`eth0`in_bytes", "derive": "counter", "name": "Ethernet In Bytes"},
-		{ "bundle": "nad", "metric_name": "if`eth0`in_errors", "derive": "counter", "name": "Ethernet In Errors"},
-		{ "bundle": "nad", "metric_name": "if`eth0`out_bytes", "derive": "counter", "name": "Ethernet Out Bytes"},
-		{ "bundle": "nad", "metric_name": "if`eth0`out_errors", "derive": "counter", "name": "Ethernet Out Errors"}
+		{ "bundle": "nad", "metric_name": "if`eth0`in_bytes", "name": "Ethernet In Bytes"},
+		{ "bundle": "nad", "metric_name": "if`eth0`in_errors", "name": "Ethernet In Errors"},
+		{ "bundle": "nad", "metric_name": "if`eth0`out_bytes", "name": "Ethernet Out Bytes"},
+		{ "bundle": "nad", "metric_name": "if`eth0`out_errors", "name": "Ethernet Out Errors"}
             ]
+	},
+	{
+	    "title": "File Systems -",
+	    "datapoints": [
+		{ "bundle": "nad", "metric_name": "fs`/`used_inode_percent", "name": "Fs '/' Used Inode Percent"},
+ 	    	{ "bundle": "nad", "metric_name": "fs`/`df_used_inode_percent", "name": "Fs '/' df Used Inode Percent"},
+		{ "bundle": "nad", "metric_name": "fs`/`used_percent", "name": "Fs '/' Used Percent"},  
+		{ "bundle": "nad", "metric_name": "fs`/`df_used_percent", "name": "Fs '/' df Used Percent"}
+	    ]
 	}
-	
-
-
     ];
 
     this.scripts = [
