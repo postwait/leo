@@ -29,6 +29,9 @@ nad must be installed for any checks, graphs, or worksheets to be made.
 
 Directions for nad installation can be found here: https://d.circonus.com/questions/22/how-to-useextend-node-agent.html
 
+Currently leo is only supported on Linux OSs such as CentOS and Ubuntu. This is due to changes that must be made to nad.js pertaining to which files must be read and how different metrics are classified. However we do have test nad.js files in the additional components folder for those who want to install and use leo on either FreeBSD or Illumos.
+
+
 RHEL/CentOS
 ---
 
