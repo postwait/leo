@@ -38,10 +38,10 @@ module.exports = function Nad() {
 {
             "title": "Disks - ",
             "datapoints": [
-                { "bundle": "nad", "metric_name": "sdinfo`sd:0:sd0:`nread", "name": "Disk Nread"},
-                { "bundle": "nad", "metric_name": "sdinfo`sd:0:sd0:`nwritten", "name": "Disk Nwritten"},
-                { "bundle": "nad", "metric_name": "sdinfo`sd:0:sd0:`reads", "name": "Disk Reads"},
-                { "bundle": "nad", "metric_name": "sdinfo`sd:0:sd0:`writes", "name": "Disk Writes"}
+                { "bundle": "nad", "metric_name": "sdinfo`sd:0:sd0:nread", "name": "Disk Nread"},
+                { "bundle": "nad", "metric_name": "sdinfo`sd:0:sd0:nwritten", "name": "Disk Nwritten"},
+                { "bundle": "nad", "metric_name": "sdinfo`sd:0:sd0:reads", "name": "Disk Reads"},
+                { "bundle": "nad", "metric_name": "sdinfo`sd:0:sd0:writes", "name": "Disk Writes"}
            ]
         },
         {
