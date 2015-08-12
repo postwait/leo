@@ -12,7 +12,7 @@ module.exports = function Nad() {
     this.description = "CPU, disk, memory, and network metrics via Node.js Agent for Illumos";
 
     this.defaultMetrics = {
-        "nad": ["cpu`idle`steal", "cpu`kernel", "cpu`user", "cpu`wait_io", "sdinfo`sd:0:sd0:nread", "sdinfo`sd:0:sd0:nwritten", "sdinfo`sd:0:sd0:reads", "sdinfo`sd:0:sd0:writes", "if`link:0:net0:ierrors", "if`link:0:net0:obytes", "if`link:0:net0:oerrors", "vminfo`unix:0:vminfo:fremem", "vminfo`unix:0:vminfo:swap_free", "vminfo`unix:0:vminfo:swap_alloc", "zfs`/`used_percent"]
+        "nad": ["cpu`idle`steal", "cpu`kernel", "cpu`user", "cpu`wait_io", "sdinfo`sd:0:sd0:nread", "sdinfo`sd:0:sd0:nwritten", "sdinfo`sd:0:sd0:reads", "sdinfo`sd:0:sd0:writes", "if`link:0:net0:ierrors", "if`link:0:net0:obytes", "if`link:0:net0:oerrors", "vminfo`unix:0:vminfo:freemem", "vminfo`unix:0:vminfo:swap_free", "vminfo`unix:0:vminfo:swap_alloc", "zfs`/`used_percent"]
     };
 
     this.defaultGraphs = [
