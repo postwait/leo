@@ -28,10 +28,9 @@ module.exports = function Nad() {
         {
             "title": "Memory - ",
             "datapoints": [
-                { "bundle": "nad", "metric_name": "vminfo`memory`total", "name": "Memory Total"},
-                { "bundle": "nad", "metric_name": "vminfo`memory`used", "name": "Memory Used"},
-                { "bundle": "nad", "metric_name": "vminfo`swap`free", "name": "Swap Free"},
-                { "bundle": "nad", "metric_name": "vminfo`swap`used", "name": "Swap Used"}
+                { "bundle": "nad", "metric_name": "vminfo:unix0:vminfo:fremem", "derive": "counter", "data_formula": "=VAL*4096", "name": "Memory Free"},
+                { "bundle": "nad", "metric_name": "vminfo:unix0:vminfo:swap_free", "name": "Swap Free"},
+                { "bundle": "nad", "metric_name": "vminfo:unix0:vminfo:swap_alloc", "name": "Swap Used"}
             ]
         },
 		
@@ -47,17 +46,15 @@ module.exports = function Nad() {
         {
             "title": "Network - ",
             "datapoints": [
-                { "bundle": "nad", "metric_name": "if`eth0`in_bytes", "derive": "counter", "name": "Ethernet In Bytes"},
-                { "bundle": "nad", "metric_name": "if`eth0`in_errors", "derive": "counter", "name": "Ethernet In Errors"},
-                { "bundle": "nad", "metric_name": "if`eth0`out_bytes", "derive": "counter", "name": "Ethernet Out Bytes"},
-                { "bundle": "nad", "metric_name": "if`eth0`out_errors", "derive": "counter", "name": "Ethernet Out Errors"}
+                { "bundle": "nad", "metric_name": "if`link:0:net0:ierrors", "derive": "counter", "name": "Ethernet In Errors"},
+                { "bundle": "nad", "metric_name": "if`link:0:net0:obytes", "derive": "counter", "name": "Ethernet Out Bytes"},
+                { "bundle": "nad", "metric_name": "if`link:0:net0:oerrors", "derive": "counter", "name": "Ethernet Out Errors"}
             ]
         },
         {
             "title": "File Systems -",
             "datapoints": [
                 { "bundle": "nad", "metric_name": "zfs`/`used_percent", "name": "Fs '/' Used Percent"},
-                { "bundle": "nad", "metric_name": "fs`/`df_used_percent", "name": "Fs '/' df Used Percent"}
             ]
         }
     ];
